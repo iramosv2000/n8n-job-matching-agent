@@ -7,13 +7,16 @@ differentiating capabilities (guardrail, evaluation, MCP).
 | Milestone | Estimated effort | Cumulative | Demonstrable outcome |
 |---|---|---|---|
 | M0 Design | done | — | Design documentation and backlog |
-| M1 Local platform | 1 week | 1 | Healthy stack from a clean clone; workflows versioned |
-| M2 Ingestion | 1.5 weeks | 2.5 | Offers flowing daily into PostgreSQL |
-| M3 Enrichment & scoring | 1.5 weeks | 4 | Scored offers with rules + LLM features |
-| M4 Notifications (MVP) | 1 week | 5 | Daily Telegram digest with actions and tracking |
-| M5 CV agent + guardrail | 1.5 weeks | 6.5 | Validated CV sections on demand |
-| M6 Evaluation & observability | 2 weeks | 8.5 | Results report with CIs and costs |
-| M7 MCP & case study | 1 week | 9.5 | MCP tools, demo, written case study, v1.0.0 |
+| M1 Local platform | 1.5 weeks | 1.5 | Healthy stack from a clean clone; workflows versioned; local model benchmarked |
+| M2 Ingestion | 1.5 weeks | 3 | Offers flowing daily into PostgreSQL |
+| M3 Enrichment & scoring | 1.5 weeks | 4.5 | Scored offers with rules + LLM features, routed by provider policy |
+| M4 Notifications (MVP) | 1 week | 5.5 | Daily Telegram digest with actions and tracking |
+| M5 CV agent + guardrail | 1.5 weeks | 7 | Validated CV sections on demand, generated locally |
+| M6 Evaluation & observability | 2 weeks | 9 | Results report with CIs, latency and quota use |
+| M7 MCP & case study | 1 week | 10 | MCP tools, demo, written case study, v1.0.0 |
+
+**Budget constraint:** every milestone must be achievable at zero additional cost
+([ADR-0007](adr/0007-zero-cost-provider-agnostic-llm.md)).
 
 The table below is the source of truth for the GitHub issues. The `Done when` column is
 the acceptance criterion copied into each issue.
@@ -34,7 +37,8 @@ the acceptance criterion copied into each issue.
 | M1-03 | Workflow export/import scripts | `scripts/export_workflows.sh` and `import_workflows.sh` use the n8n CLI (`--backup`); exported JSON contains no secrets | type:infra, area:n8n |
 | M1-04 | CI pipeline | GitHub Actions run lint, workflow JSON validation, secret scan and a compose smoke test on every PR | type:infra, area:infra |
 | M1-05 | Pre-commit hooks | ruff, a secret scan and a personal-data path guard run locally before commit | type:infra, area:infra |
-| M1-06 | Spike: verify n8n capabilities for the pinned version | MCP Server Trigger transports, Evaluations licensing, and how the Anthropic node implements structured output are documented, and ADR-0004 is updated | type:spike, area:n8n, area:llm |
+| M1-06 | Spike: verify n8n capabilities for the pinned version | MCP Server Trigger transports, Evaluations availability in Community Edition, and JSON-schema output support in the Gemini and Ollama nodes are documented; ADR-0007 is updated if needed | type:spike, area:n8n, area:llm |
+| M1-07 | Spike: local LLM runtime benchmark | Ollama runs natively; 2–3 candidate models are benchmarked with the Docker stack running (peak memory, tokens/s, JSON-schema adherence, fit of an ~8k-token CV prompt); container-to-host networking is verified; the choice is recorded in ADR-0007 | type:spike, area:llm |
 
 ## M2 Ingestion
 
@@ -45,7 +49,7 @@ the acceptance criterion copied into each issue.
 | M2-03 | WF-01 Get on Board ingestion | Scheduled workflow pages through queries and categories, upserts offers and records per-source counts | type:feature, area:n8n |
 | M2-04 | Cross-source deduplication | `/dedupe` ported from the As-Is with tests; duplicates linked through `duplicate_of` | type:feature, area:service |
 | M2-05 | Optional source adapters | Adapters behind feature flags; `robots.txt` check, rate limiting and synthetic-fixture tests | type:feature, area:service |
-| M2-06 | Measure the arrival rate | Two weeks of runs summarised (new offers/day, per source); cost estimate in ADR-0004 updated | type:spike, area:llm |
+| M2-06 | Measure the arrival rate | Two weeks of runs summarised (new offers/day, per source); fit against the Gemini free-tier quota (as shown in AI Studio, with date) recorded in ADR-0007 | type:spike, area:llm |
 
 ## M3 Enrichment & scoring
 
@@ -54,8 +58,9 @@ the acceptance criterion copied into each issue.
 | M3-01 | Port rule-based extraction | `/extract/rules` reproduces As-Is outputs on an archived input set (parity tests) | type:feature, area:service |
 | M3-02 | Port scoring | `/score` returns score, breakdown and discard reasons; profile is configuration-driven | type:feature, area:service |
 | M3-03 | Extraction schema and prompt v1 | Versioned JSON Schema and prompt in the repository; validated on the development set | type:feature, area:llm |
-| M3-04 | WF-02 LLM structured extraction | Pre-filtered offers are extracted with schema-valid output; every call logged in `llm_calls` | type:feature, area:n8n, area:llm |
+| M3-04 | WF-02 LLM structured extraction | Pre-filtered offers are extracted through WF-10 (Gemini free tier, then local fallback) with schema-valid output; every call logged in `llm_calls` with its provider | type:feature, area:n8n, area:llm |
 | M3-05 | Hybrid merge and feature storage | Merge policy implemented; `offer_features` append-only per extractor and version | type:feature, area:service, area:db |
+| M3-07 | WF-10 LLM router | Per-task provider policy, daily quota counter and 429/5xx fallback implemented; a unit test proves the CV route can never select an unpaid external provider | type:feature, area:n8n, area:llm |
 | M3-06 | Fictitious example profile | `profiles/example/` contains a realistic, fully fictitious profile and CV used by tests and demo | type:docs |
 
 ## M4 Notifications (MVP)
@@ -74,9 +79,9 @@ the acceptance criterion copied into each issue.
 |---|---|---|---|
 | M5-01 | CV output schema | JSON Schema for sections, keywords, gaps and match before/after; LaTeX sections stay within the 1-page constraints | type:feature, area:llm |
 | M5-02 | Guardrail validator | `/validate/cv` traces each skill and claim to the master CV or the confirmed skills; adversarial test cases included | type:feature, area:service |
-| M5-03 | WF-05 CV adaptation | Retry once on violations; unresolved violations are delivered as flagged, never silently | type:feature, area:n8n, area:llm |
+| M5-03 | WF-05 CV adaptation | Runs on the local model via WF-10; retry once on violations; unresolved violations are delivered as flagged, never silently | type:feature, area:n8n, area:llm |
 | M5-04 | Confirm-a-gap flow | The candidate can confirm a gap with evidence from Telegram; stored in `confirmed_skills` | type:feature, area:n8n |
-| M5-05 | Prompt caching and cost logging | Static prefix cached; cache hits visible in `llm_calls` | type:feature, area:llm |
+| M5-05 | CV privacy and latency check | An egress check shows that no CV data leaves the host; p95 CV generation latency is documented; manual-mode fallback works | type:feature, area:llm |
 
 ## M6 Evaluation & observability
 
@@ -87,8 +92,8 @@ the acceptance criterion copied into each issue.
 | M6-03 | Extraction evaluation harness | Rules vs LLM vs hybrid; bootstrap CIs; McNemar; 3 runs per LLM configuration | type:eval, area:service |
 | M6-04 | Ranking evaluation | nDCG@10 and P@10 per daily batch with CIs | type:eval |
 | M6-05 | Guardrail audit | 30 CV outputs audited by hand; validator recall reported | type:eval, area:llm |
-| M6-06 | WF-09 weekly report | Funnel, source health and weekly LLM cost delivered on Mondays | type:feature, area:n8n |
-| M6-07 | Results report | `evals/results/REPORT.md` with tables, CIs, costs and limitations; ADR-0004 decision recorded | type:eval, type:docs |
+| M6-06 | WF-09 weekly report | Funnel, source health and weekly LLM usage and quota per provider delivered on Mondays | type:feature, area:n8n |
+| M6-07 | Results report | `evals/results/REPORT.md` with tables, CIs, latency, quota use and limitations; provider policy in ADR-0007 confirmed or revised | type:eval, type:docs |
 
 ## M7 MCP & case study
 

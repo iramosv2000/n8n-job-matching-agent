@@ -79,6 +79,7 @@ erDiagram
         text workflow
         text offer_id FK
         text task
+        text provider
         text model
         int input_tokens
         int cached_input_tokens
@@ -99,7 +100,7 @@ erDiagram
 | `applications` | `status` ∈ {`new`, `shortlisted`, `cv_generated`, `applied`, `interview`, `offer`, `rejected`, `discarded`}. Transitions are written only by WF-04 or by MCP tools with confirmation. |
 | `cv_adaptations` | `cv_hash` is a SHA-256 of the master CV, so outputs made from an older CV can be detected and regenerated. `validation` stores the guardrail report. |
 | `confirmed_skills` | Skills absent from the master CV that the candidate confirmed holding, each with free-text evidence. These are the only additions the CV agent may use. |
-| `llm_calls` | One row per LLM request: token usage taken from the API response, latency, cost computed from a versioned price table, and the API `request_id` for traceability. |
+| `llm_calls` | One row per LLM request: `provider` (`gemini_free`, `ollama`, `claude_api`), model, token usage, latency, and the provider's request ID when available. These rows drive quota tracking and fallback routing. `cost_usd` is 0 for free providers and is kept for the optional paid provider. |
 
 ## Canonical offer schema (contract between n8n and matcher-service)
 

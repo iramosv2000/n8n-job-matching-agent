@@ -4,7 +4,8 @@
 ![n8n](https://img.shields.io/badge/orchestration-n8n%20(self--hosted)-EA4B71)
 ![Python](https://img.shields.io/badge/service-Python%20%2B%20FastAPI-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/storage-PostgreSQL-4169E1)
-![Claude](https://img.shields.io/badge/LLM-Claude%20API-D97757)
+![LLM](https://img.shields.io/badge/LLM-Gemini%20free%20tier%20%C2%B7%20local%20Ollama-8E75B2)
+![Cost](https://img.shields.io/badge/operating%20cost-USD%200-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 An AI process-automation system that collects engineering job offers from Chilean job
@@ -34,7 +35,7 @@ claim is not simply "it works better".
 | Results live in a local HTML panel | Daily Telegram digest with action buttons (generate CV / discard / applied) |
 | No application tracking | Application status stored per offer, with a weekly funnel report |
 | Rule-based extraction with unknown accuracy | Rules + LLM structured extraction, **both measured** against labelled data |
-| CV generation tied to a local CLI session | Versioned workflow with schema-validated output and a fabrication guardrail |
+| CV generation tied to a local CLI session on one paid account | Versioned workflow on a **local** model with schema-validated output and a fabrication guardrail |
 | Single-user SQLite, logic and orchestration mixed | PostgreSQL; orchestration (n8n) separated from tested domain logic (Python) |
 
 The full process analysis is in [`docs/process-analysis.md`](docs/process-analysis.md).
@@ -58,7 +59,7 @@ flowchart LR
     end
     SVC[matcher-service<br/>Python · FastAPI<br/>normalise · rules · score · guardrail]
     DB[(PostgreSQL)]
-    LLM[Claude API<br/>structured outputs]
+    LLM[LLM router<br/>Gemini free tier · local Ollama<br/>JSON-schema outputs]
     TG[Telegram bot]
     MCPC[MCP client<br/>e.g. Claude Desktop]
 
@@ -80,7 +81,10 @@ flowchart LR
     WF7 <--> SVC
 ```
 
-**Design principle:** n8n orchestrates (schedules, branching, retries, integrations,
+**Design principles:** the system runs at **zero operating cost**, and **personal data
+never leaves the machine** ([ADR-0007](docs/adr/0007-zero-cost-provider-agnostic-llm.md)).
+Public offer text goes to the Gemini API free tier, with a local fallback. The CV is
+processed only by a local model served by Ollama. n8n orchestrates (schedules, branching, retries, integrations,
 human approval). Deterministic logic such as parsing, scoring, deduplication and the
 guardrail lives in a unit-tested Python service. The LLM handles only the tasks where
 rules are known to be weak. The rationale is in [ADR-0001](docs/adr/0001-n8n-orchestrates-python-computes.md).
@@ -110,12 +114,12 @@ rules are known to be weak. The rationale is in [ADR-0001](docs/adr/0001-n8n-orc
 | Milestone | Outcome |
 |---|---|
 | **M0 Design** | Architecture, ADRs, data model, evaluation plan, backlog |
-| **M1 Local platform** | `docker compose up` brings up n8n, PostgreSQL and the service; workflows are versioned through the CLI |
+| **M1 Local platform** | `docker compose up` brings up n8n, PostgreSQL and the service; workflows versioned through the CLI; local model benchmarked |
 | **M2 Ingestion** | Scheduled ingestion from Get on Board (plus optional adapters), deduplicated into PostgreSQL |
 | **M3 Enrichment & scoring** | Rule extraction ported with parity tests; LLM structured extraction; scoring |
 | **M4 Notifications (MVP)** | Telegram digest, action buttons, application tracking, error alerts |
 | **M5 CV agent + guardrail** | Schema-validated CV sections; fabrication guardrail with retry-on-violation |
-| **M6 Evaluation & observability** | Labelled dataset; rules vs LLM vs hybrid; cost and latency per offer |
+| **M6 Evaluation & observability** | Labelled dataset; rules vs Gemini (free) vs local model vs hybrid; latency and quota use |
 | **M7 MCP & case study** | n8n MCP server; demo; written case study with results |
 
 Details and acceptance criteria are in [`docs/roadmap.md`](docs/roadmap.md).
@@ -128,6 +132,8 @@ Details and acceptance criteria are in [`docs/roadmap.md`](docs/roadmap.md).
 - **Polite, transparent collection.** The primary source is a documented public API. The
   optional adapters respect `robots.txt`, rate limits and an identifiable User-Agent.
   Collected offer texts are **not** redistributed in this repository.
+- **Personal data stays local.** The CV is processed only by a local model. Free-tier
+  external APIs receive only public offer text, with contact details redacted.
 - **No personal data in Git.** The real CV, profile, secrets and collected data are
   excluded. Tests use synthetic fixtures.
 
@@ -135,9 +141,10 @@ See [`docs/data-governance.md`](docs/data-governance.md).
 
 ## Tech stack
 
-n8n (self-hosted, Docker) · Python 3.12 · FastAPI · Pydantic · pytest · PostgreSQL ·
-Claude API (structured outputs) · Telegram Bot API · Model Context Protocol (MCP) ·
-GitHub Actions.
+n8n Community Edition (self-hosted, Docker) · Python 3.12 · FastAPI · Pydantic · pytest ·
+PostgreSQL · Gemini API (free tier) · Ollama (local open-weight models) · Telegram Bot API ·
+Model Context Protocol (MCP) · GitHub Actions. The Claude API is supported as an optional
+provider. Every component has a no-cost option.
 
 ## Resumen (español)
 
@@ -147,7 +154,9 @@ El sistema reúne ofertas de portales chilenos y extrae requisitos con un LLM (s
 estructuradas). Las ofertas relevantes se notifican por Telegram, con aprobación humana,
 y el sistema genera secciones de CV adaptadas, protegidas por un validador que impide
 inventar experiencia. La migración se evalúa contra el sistema original con un conjunto
-de ofertas etiquetado a mano.
+de ofertas etiquetado a mano. Opera con **costo cero**: las ofertas (datos públicos) se
+procesan con el nivel gratuito de la API de Gemini, y el CV solo con un modelo local
+(Ollama), de modo que los datos personales no salen del equipo.
 
 ## Author
 

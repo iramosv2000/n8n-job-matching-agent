@@ -9,7 +9,7 @@
 | Master CV and application protocol | Candidate | **Yes**: name, phone, e-mail, history | Local file, mounted read-only | **No** |
 | Example profile and CV | Authored for this repo | No (fictitious) | `profiles/example/` | Yes |
 | Confirmed skills, application statuses | Candidate | Yes (career data) | Local PostgreSQL | No |
-| Credentials (Claude API key, Telegram token, DB password) | Candidate | Secret | n8n credential store (encrypted) and `.env` | **No** |
+| Credentials (Gemini API key, Telegram token, DB password; optional Claude API key) | Candidate | Secret | n8n credential store (encrypted) and `.env` | **No** |
 | LLM usage logs | System | No (tokens, costs, request IDs) | Local PostgreSQL | No |
 
 ## 2. Source policy
@@ -52,14 +52,27 @@ type), never full descriptions.
 
 ## 5. LLM data flow
 
-| Task | Sent to the Claude API | Not sent |
-|---|---|---|
-| Requirement extraction | Redacted offer description and title | Candidate data |
-| CV adaptation | Master CV, protocol, confirmed skills, redacted offer | Credentials, other offers |
+Provider policy per task: [ADR-0007](adr/0007-zero-cost-provider-agnostic-llm.md).
 
-API usage is subject to Anthropic's commercial terms and data-retention policy. Request
-IDs are logged for traceability. Prompts and responses are stored locally in
-`cv_adaptations` / `offer_features` so that every output is auditable.
+| Task | Provider | Sent | Never sent |
+|---|---|---|---|
+| Requirement extraction | Gemini API **free tier** (local fallback) | Redacted offer title and description, which are public data | Any candidate data |
+| CV adaptation | **Local model (Ollama)**; never leaves the machine | Master CV, protocol, confirmed skills, redacted offer | n/a, because the data stays local |
+| CV adaptation, manual mode | Candidate pastes a prompt bundle into a chat app of their choice | Whatever the candidate decides to paste | Not automated |
+
+**Why the split.** Under the Gemini API's unpaid-service terms, inputs and outputs may be
+used to improve Google's products and may be read by human reviewers. The terms instruct
+users not to submit personal information
+([Gemini API terms](https://ai.google.dev/gemini-api/terms)). The router therefore sends
+only public, contact-redacted offer text to the free tier. Any route that would send
+personal data to an unpaid service is rejected by policy, and that rule is unit-tested.
+
+If the candidate uses manual mode with a consumer chat app, that app's own data settings
+(for example, activity and training settings) apply. The candidate reviews them before
+pasting a CV.
+
+Prompts and responses are stored locally in `cv_adaptations` / `offer_features`, so
+every output is auditable.
 
 ## 6. Secrets management
 
@@ -74,5 +87,7 @@ IDs are logged for traceability. Prompts and responses are stored locally in
 ## 7. Access and exposure
 
 All services bind to a private Docker network. Only n8n's editor port is published to
-`localhost`. A tunnel for Telegram webhooks or MCP over HTTP, if one is used, is
+`localhost`. Ollama runs on the host and is not exposed to the LAN. It must still be reachable from
+the containers through `host.docker.internal`; the exact binding for Docker Desktop vs
+Colima is verified in M1-07. A tunnel for Telegram webhooks or MCP over HTTP, if one is used, is
 authenticated and documented in `infra/README.md`.

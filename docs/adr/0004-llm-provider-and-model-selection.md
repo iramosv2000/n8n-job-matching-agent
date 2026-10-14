@@ -1,6 +1,6 @@
 # ADR-0004: LLM provider, integration path and model per task
 
-- **Status:** Accepted for provider and integration; **model per task pending M6 evidence**
+- **Status:** **Superseded by [ADR-0007](0007-zero-cost-provider-agnostic-llm.md)** (2026-10-14). The project must run at zero additional cost, so a paid API key cannot be a prerequisite. The record below is kept unchanged for traceability.
 - **Date:** 2026-10-14
 
 ## Context

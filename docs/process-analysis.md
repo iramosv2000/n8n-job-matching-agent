@@ -70,9 +70,9 @@ a skill is genuinely held.
 | `fuentes.getonbrd` | n8n HTTP Request node | Documented public API, so no custom code is needed |
 | Other `fuentes.*` adapters | `POST /sources/{name}/fetch` | Optional, isolated, tested with synthetic fixtures |
 | `analisis.extraer_*`, `evaluar` | `POST /extract/rules`, `POST /score` | Ported with **parity tests** against As-Is outputs |
-| (none) | LLM structured extraction | New; its value is measured in M6, not assumed |
+| (none) | LLM structured extraction (Gemini free tier → local fallback) | New; its value is measured in M6, not assumed |
 | `historial.py` (SQLite) | PostgreSQL schema | Multi-writer; application tracking; LLM usage accounting |
-| `cv_adaptar.generar` (`claude -p`) | WF-05 + Claude API | Portable; schema-validated; guardrail and retry |
+| `cv_adaptar.generar` (`claude -p`) | WF-05 + local model (Ollama) via WF-10 | Zero cost; personal data stays local; schema-validated; guardrail and retry |
 | `cv_adaptar.analisis_local` | `POST /validate/cv` | Extended from gap listing to claim traceability |
 | `panel.py` / `servidor.py` | Telegram digest + MCP server | Push instead of pull; conversational queries |
 
