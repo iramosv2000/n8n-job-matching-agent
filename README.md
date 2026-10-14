@@ -1,0 +1,159 @@
+# n8n Job-Matching Agent
+
+![status](https://img.shields.io/badge/status-M0%20design-lightgrey)
+![n8n](https://img.shields.io/badge/orchestration-n8n%20(self--hosted)-EA4B71)
+![Python](https://img.shields.io/badge/service-Python%20%2B%20FastAPI-3776AB)
+![PostgreSQL](https://img.shields.io/badge/storage-PostgreSQL-4169E1)
+![Claude](https://img.shields.io/badge/LLM-Claude%20API-D97757)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+An AI process-automation system that collects engineering job offers from Chilean job
+boards and scores each one against a candidate profile. It uses an LLM to extract
+structured requirements, notifies the candidate through Telegram with human-in-the-loop
+actions, and generates tailored CV sections. A deterministic guardrail checks that the
+generated CV never claims experience the candidate does not have.
+
+The project is a **re-platforming case study**. A working single-user Python tool (the
+*As-Is* baseline) is migrated to an orchestrated architecture built on **n8n**, a Python
+microservice and PostgreSQL (the *To-Be*). The migration is measured: the new system is
+evaluated against the old one on a manually labelled dataset, with explicit metrics. The
+claim is not simply "it works better".
+
+> **Status: Milestone 0 (design).** This repository currently contains the design
+> (architecture, decisions, data model, evaluation plan, roadmap) and no implementation
+> code. Progress is tracked in [GitHub milestones and issues](https://github.com/iramosv2000/n8n-job-matching-agent/milestones) and in
+> [`docs/roadmap.md`](docs/roadmap.md).
+
+---
+
+## Why this project
+
+| Problem in the current tool (As-Is) | Response in this project (To-Be) |
+|---|---|
+| Runs only when launched manually from a terminal | Scheduled n8n workflows with error alerts |
+| Results live in a local HTML panel | Daily Telegram digest with action buttons (generate CV / discard / applied) |
+| No application tracking | Application status stored per offer, with a weekly funnel report |
+| Rule-based extraction with unknown accuracy | Rules + LLM structured extraction, **both measured** against labelled data |
+| CV generation tied to a local CLI session | Versioned workflow with schema-validated output and a fabrication guardrail |
+| Single-user SQLite, logic and orchestration mixed | PostgreSQL; orchestration (n8n) separated from tested domain logic (Python) |
+
+The full process analysis is in [`docs/process-analysis.md`](docs/process-analysis.md).
+
+## Architecture (target)
+
+```mermaid
+flowchart LR
+    subgraph Sources
+        GOB[Get on Board<br/>public API]
+        OTH[Other boards<br/>optional adapters]
+    end
+    subgraph n8n["n8n (orchestration)"]
+        WF1[WF-01 Ingest]
+        WF2[WF-02 Enrich & score]
+        WF3[WF-03 Daily digest]
+        WF4[WF-04 Telegram actions]
+        WF5[WF-05 CV adaptation]
+        WF6[WF-06 MCP server]
+        WF7[WF-07 Evaluation]
+    end
+    SVC[matcher-service<br/>Python · FastAPI<br/>normalise · rules · score · guardrail]
+    DB[(PostgreSQL)]
+    LLM[Claude API<br/>structured outputs]
+    TG[Telegram bot]
+    MCPC[MCP client<br/>e.g. Claude Desktop]
+
+    GOB --> WF1
+    OTH --> SVC
+    WF1 <--> SVC
+    WF1 --> DB
+    WF2 <--> SVC
+    WF2 <--> LLM
+    WF2 --> DB
+    WF3 --> TG
+    TG --> WF4
+    WF4 --> WF5
+    WF5 <--> LLM
+    WF5 <--> SVC
+    WF5 --> TG
+    WF6 <--> DB
+    MCPC <--> WF6
+    WF7 <--> SVC
+```
+
+**Design principle:** n8n orchestrates (schedules, branching, retries, integrations,
+human approval). Deterministic logic such as parsing, scoring, deduplication and the
+guardrail lives in a unit-tested Python service. The LLM handles only the tasks where
+rules are known to be weak. The rationale is in [ADR-0001](docs/adr/0001-n8n-orchestrates-python-computes.md).
+
+## Repository layout
+
+```
+├── docs/                 Design documentation (start here)
+│   ├── architecture.md       Components, workflow catalogue, sequences, NFRs
+│   ├── process-analysis.md   As-Is → To-Be analysis and module mapping
+│   ├── data-model.md         PostgreSQL schema (logical)
+│   ├── evaluation-plan.md    Research questions, labelling protocol, metrics
+│   ├── data-governance.md    Sources policy, personal data, secrets, LLM data flow
+│   ├── roadmap.md            Milestones, deliverables, acceptance criteria
+│   └── adr/                  Architecture Decision Records
+├── workflows/            Exported n8n workflows (JSON, no credentials)      [M1+]
+├── services/matcher/     Python FastAPI service + tests                     [M2+]
+├── db/migrations/        SQL migrations                                     [M2]
+├── profiles/example/     Fictitious example profile and CV (no real data)   [M3]
+├── evals/                Labels, evaluation harness, results                [M6]
+├── infra/                Docker Compose for n8n + PostgreSQL + service      [M1]
+└── scripts/              Workflow export/import and utilities               [M1]
+```
+
+## Roadmap
+
+| Milestone | Outcome |
+|---|---|
+| **M0 Design** | Architecture, ADRs, data model, evaluation plan, backlog |
+| **M1 Local platform** | `docker compose up` brings up n8n, PostgreSQL and the service; workflows are versioned through the CLI |
+| **M2 Ingestion** | Scheduled ingestion from Get on Board (plus optional adapters), deduplicated into PostgreSQL |
+| **M3 Enrichment & scoring** | Rule extraction ported with parity tests; LLM structured extraction; scoring |
+| **M4 Notifications (MVP)** | Telegram digest, action buttons, application tracking, error alerts |
+| **M5 CV agent + guardrail** | Schema-validated CV sections; fabrication guardrail with retry-on-violation |
+| **M6 Evaluation & observability** | Labelled dataset; rules vs LLM vs hybrid; cost and latency per offer |
+| **M7 MCP & case study** | n8n MCP server; demo; written case study with results |
+
+Details and acceptance criteria are in [`docs/roadmap.md`](docs/roadmap.md).
+
+## Responsible-use principles
+
+- **No fabrication.** The CV agent may only reorder, rephrase and prioritise facts that
+  are present in the master CV or explicitly confirmed by the candidate. A deterministic
+  validator enforces this rule, so it does not depend on the prompt alone.
+- **Polite, transparent collection.** The primary source is a documented public API. The
+  optional adapters respect `robots.txt`, rate limits and an identifiable User-Agent.
+  Collected offer texts are **not** redistributed in this repository.
+- **No personal data in Git.** The real CV, profile, secrets and collected data are
+  excluded. Tests use synthetic fixtures.
+
+See [`docs/data-governance.md`](docs/data-governance.md).
+
+## Tech stack
+
+n8n (self-hosted, Docker) · Python 3.12 · FastAPI · Pydantic · pytest · PostgreSQL ·
+Claude API (structured outputs) · Telegram Bot API · Model Context Protocol (MCP) ·
+GitHub Actions.
+
+## Resumen (español)
+
+Sistema de automatización de procesos con IA que migra un buscador de empleo hecho en
+Python a una arquitectura orquestada con **n8n**, un microservicio Python y PostgreSQL.
+El sistema reúne ofertas de portales chilenos y extrae requisitos con un LLM (salidas
+estructuradas). Las ofertas relevantes se notifican por Telegram, con aprobación humana,
+y el sistema genera secciones de CV adaptadas, protegidas por un validador que impide
+inventar experiencia. La migración se evalúa contra el sistema original con un conjunto
+de ofertas etiquetado a mano.
+
+## Author
+
+**Ignacio Ramos Valenzuela**, Ingeniero Civil Electrónico (embedded systems, control,
+applied AI). GitHub: [@iramosv2000](https://github.com/iramosv2000)
+
+## License
+
+[MIT](LICENSE)
