@@ -89,6 +89,21 @@ human approval). Deterministic logic such as parsing, scoring, deduplication and
 guardrail lives in a unit-tested Python service. The LLM handles only the tasks where
 rules are known to be weak. The rationale is in [ADR-0001](docs/adr/0001-n8n-orchestrates-python-computes.md).
 
+## Quick start (local platform)
+
+Requires a Docker engine with Compose v2 (Colima or Docker Desktop on macOS, Docker
+Engine on Linux). Details, secrets handling and troubleshooting:
+[`infra/README.md`](infra/README.md).
+
+```bash
+scripts/init_env.sh            # .env with random secrets (git-ignored); back up N8N_ENCRYPTION_KEY
+docker compose up -d --wait    # PostgreSQL + n8n, health-checked
+scripts/smoke_test.sh          # readiness, schemas, workflow import, export checks
+pre-commit install             # local quality, secret and personal-data hooks
+```
+
+n8n is then available at <http://localhost:5678>, bound to localhost only.
+
 ## Repository layout
 
 ```
@@ -114,7 +129,7 @@ rules are known to be weak. The rationale is in [ADR-0001](docs/adr/0001-n8n-orc
 | Milestone | Outcome |
 |---|---|
 | **M0 Design** | Architecture, ADRs, data model, evaluation plan, backlog |
-| **M1 Local platform** | `docker compose up` brings up n8n, PostgreSQL and the service; workflows versioned through the CLI; local model benchmarked |
+| **M1 Local platform** | `docker compose up` brings up n8n and PostgreSQL; workflows versioned through the CLI; CI and hooks; local model benchmarked |
 | **M2 Ingestion** | Scheduled ingestion from Get on Board (plus optional adapters), deduplicated into PostgreSQL |
 | **M3 Enrichment & scoring** | Rule extraction ported with parity tests; LLM structured extraction; scoring |
 | **M4 Notifications (MVP)** | Telegram digest, action buttons, application tracking, error alerts |

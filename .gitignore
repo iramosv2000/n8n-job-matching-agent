@@ -38,6 +38,7 @@ build/
 *.egg-info/
 
 # --- n8n / Docker local state ---
+.wf-export/
 n8n_data/
 .n8n/
 postgres_data/
