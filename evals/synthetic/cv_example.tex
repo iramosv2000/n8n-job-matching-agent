@@ -1,0 +1,69 @@
+% Fictitious CV for benchmarks and demos. The person, employers and achievements are invented.
+\documentclass[a4paper,11pt]{article}
+\usepackage[spanish]{babel}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\newcommand{\resumeItem}[1]{\item\small{#1}}
+\newcommand{\resumeSubheading}[4]{\item\begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}\textbf{#1} & #2 \\ \textit{\small#3} & \textit{\small #4} \\\end{tabular*}}
+\newcommand{\resumeProjectHeading}[2]{\item\begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}\small#1 & #2 \\\end{tabular*}}
+\begin{document}
+
+\begin{center}
+  \textbf{\Huge Valentina Soto Pizarro} \\
+  \textbf{\large Ingeniera Civil Electrónica} \\
+  \small Valparaíso, Chile $|$ valentina.soto@example.com $|$ github.com/example-vsoto
+\end{center}
+
+\section{Resumen Profesional}
+Ingeniera Civil Electrónica con experiencia en sistemas embebidos, adquisición de datos y
+automatización de pruebas. Desarrollo de firmware en \textbf{C/C++} para \textbf{ESP32} y
+\textbf{STM32}, integración de sensores y comunicaciones \textbf{MQTT}, y análisis de datos
+en \textbf{Python}. Uso de \textbf{Docker} y \textbf{Git} para entornos reproducibles.
+
+\section{Experiencia Profesional}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \resumeSubheading{Ingeniera de Desarrollo - Laboratorio de Sensores}{Marzo 2024 -- Actualidad}
+    {Instituto Costero de Tecnología (ficticio)}{Valparaíso, Chile}
+  \begin{itemize}
+    \resumeItem{Desarrollo de firmware en \textbf{C/C++} con \textbf{FreeRTOS} para nodos \textbf{ESP32} de monitoreo ambiental.}
+    \resumeItem{Integración de sensores por \textbf{I2C} y \textbf{SPI}; calibración y validación con osciloscopio y analizador lógico.}
+    \resumeItem{Publicación de telemetría vía \textbf{MQTT} hacia un servidor Linux; paneles en \textbf{Grafana}.}
+    \resumeItem{Scripts de análisis en \textbf{Python} (pandas, NumPy) para detectar derivas de sensores.}
+    \resumeItem{Diseño de dos tarjetas \textbf{PCB} de 2 capas en \textbf{KiCad} para acondicionamiento de señales.}
+  \end{itemize}
+  \resumeSubheading{Práctica Profesional - Mantenimiento Eléctrico}{Enero 2023 -- Marzo 2023}
+    {Puerto Interior S.A. (ficticio)}{San Antonio, Chile}
+  \begin{itemize}
+    \resumeItem{Apoyo en levantamiento de tableros eléctricos y actualización de diagramas unilineales.}
+    \resumeItem{Registro de mediciones de vibración en motores de grúas para el plan de mantenimiento.}
+  \end{itemize}
+\end{itemize}
+
+\section{Proyectos}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \resumeProjectHeading{\textbf{Estación meteorológica IoT} $|$ \emph{ESP32, MQTT, Docker, Grafana}}{2024}
+  \begin{itemize}
+    \resumeItem{Nodo solar con ESP32 que publica datos cada 5 minutos; stack Docker con broker MQTT y Grafana.}
+  \end{itemize}
+  \resumeProjectHeading{\textbf{Clasificador de defectos en PCB} $|$ \emph{Python, OpenCV}}{2023}
+  \begin{itemize}
+    \resumeItem{Detección de soldaduras defectuosas con umbralización y contornos en \textbf{OpenCV} (proyecto de curso).}
+  \end{itemize}
+\end{itemize}
+
+\section{Educación}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \resumeSubheading{Universidad del Litoral (ficticia)}{Valparaíso, Chile}
+    {Ingeniería Civil Electrónica}{Diciembre 2023}
+\end{itemize}
+
+\section{Habilidades Técnicas}
+\begin{itemize}[leftmargin=0.15in, label={}]
+  \small{\item{
+    \textbf{Embebidos}{: ESP32, STM32, FreeRTOS, I2C, SPI, UART, KiCad.} \\
+    \textbf{Software}{: C/C++, Python, Git, Docker, Linux.} \\
+    \textbf{Datos e IoT}{: MQTT, Grafana, pandas, OpenCV.} \\
+    \textbf{Idiomas}{: Español (nativo), Inglés (intermedio).}
+  }}
+\end{itemize}
+\end{document}

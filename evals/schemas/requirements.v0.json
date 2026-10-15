@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "requirements.v0",
+  "title": "Job offer requirements (v0, benchmark draft; finalised in M3-03)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "years_required",
+    "years_is_desirable",
+    "contract",
+    "modality",
+    "salary_min_clp",
+    "salary_max_clp",
+    "salary_is_net",
+    "key_skills"
+  ],
+  "properties": {
+    "years_required": {"type": ["integer", "null"], "description": "Minimum years of experience; 0 if explicitly none; null if not stated"},
+    "years_is_desirable": {"type": "boolean", "description": "True if the experience is stated as desirable rather than required"},
+    "contract": {"type": "string", "enum": ["indefinido", "plazo_fijo", "plazo_fijo_a_indefinido", "honorarios", "no_indicado"]},
+    "modality": {"type": "string", "enum": ["presencial", "hibrido", "remoto", "no_indicado"]},
+    "salary_min_clp": {"type": ["integer", "null"]},
+    "salary_max_clp": {"type": ["integer", "null"]},
+    "salary_is_net": {"type": ["boolean", "null"], "description": "True if stated as líquido, false if bruto, null if not stated"},
+    "key_skills": {"type": "array", "items": {"type": "string"}, "maxItems": 12}
+  }
+}

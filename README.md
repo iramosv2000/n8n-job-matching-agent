@@ -1,6 +1,7 @@
 # n8n Job-Matching Agent
 
-![status](https://img.shields.io/badge/status-M0%20design-lightgrey)
+![status](https://img.shields.io/badge/status-M1%20done%20%C2%B7%20M2%20next-blue)
+[![ci](https://github.com/iramosv2000/n8n-job-matching-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/iramosv2000/n8n-job-matching-agent/actions/workflows/ci.yml)
 ![n8n](https://img.shields.io/badge/orchestration-n8n%20(self--hosted)-EA4B71)
 ![Python](https://img.shields.io/badge/service-Python%20%2B%20FastAPI-3776AB)
 ![PostgreSQL](https://img.shields.io/badge/storage-PostgreSQL-4169E1)
@@ -20,10 +21,12 @@ microservice and PostgreSQL (the *To-Be*). The migration is measured: the new sy
 evaluated against the old one on a manually labelled dataset, with explicit metrics. The
 claim is not simply "it works better".
 
-> **Status: Milestone 0 (design).** This repository currently contains the design
-> (architecture, decisions, data model, evaluation plan, roadmap) and no implementation
-> code. Progress is tracked in [GitHub milestones and issues](https://github.com/iramosv2000/n8n-job-matching-agent/milestones) and in
-> [`docs/roadmap.md`](docs/roadmap.md).
+> **Status: M1 complete (local platform).** n8n and PostgreSQL run with Docker Compose,
+> workflows are versioned in Git, and CI runs quality, secret-scan and stack smoke tests.
+> The local LLM was selected by benchmark: `qwen3.5:9b`
+> ([report](docs/spikes/M1-07-local-llm-benchmark.md)). Next: M2 ingestion. Progress is
+> tracked in [GitHub milestones](https://github.com/iramosv2000/n8n-job-matching-agent/milestones)
+> and [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 

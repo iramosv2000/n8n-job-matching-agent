@@ -1,0 +1,65 @@
+{
+  "_note": "Fictitious job offers written for benchmarking and CI. Companies, people and figures are invented. 'truth' holds the hand-assigned labels (schema: evals/schemas/requirements.v0.json).",
+  "offers": [
+    {
+      "id": "syn-01",
+      "title": "Ingeniero/a de Automatización - Planta Concentradora",
+      "text": "Andes Procesos SpA (empresa ficticia) busca Ingeniero/a Civil Electrónico o Eléctrico para su área de automatización en planta concentradora, Región de Antofagasta. Funciones: programación y mantención de PLC Rockwell (Studio 5000) y Siemens TIA Portal, desarrollo de pantallas HMI y SCADA, soporte a lazos de control PID e instrumentación de campo. Requisitos: mínimo 3 años de experiencia en automatización industrial, manejo de redes industriales (Profinet, Ethernet/IP, Modbus TCP), lectura de planos P&ID. Ofrecemos contrato indefinido, jornada 7x7 presencial en faena y renta líquida entre $1.800.000 y $2.100.000. Postulaciones a postulaciones@example.com.",
+      "truth": {
+        "years_required": 3, "years_is_desirable": false, "contract": "indefinido", "modality": "presencial",
+        "salary_min_clp": 1800000, "salary_max_clp": 2100000, "salary_is_net": true,
+        "key_skills": ["PLC", "Rockwell", "TIA Portal", "HMI", "SCADA", "PID", "Profinet", "Modbus"]
+      }
+    },
+    {
+      "id": "syn-02",
+      "title": "Desarrollador/a Firmware Sistemas Embebidos",
+      "text": "Telemetría Austral (ficticia) incorpora Desarrollador/a de Firmware para equipos de monitoreo remoto. Diseñarás firmware en C/C++ sobre ESP32 y STM32 con FreeRTOS, integrarás sensores por I2C, SPI y UART, y comunicaciones LoRaWAN y MQTT. Valoramos experiencia en diseño de PCB con KiCad. Experiencia deseable: 2 años. Modalidad híbrida (3 días en oficina en Santiago). Contrato a plazo fijo por 3 meses con paso a indefinido. Sueldo bruto: $1.600.000.",
+      "truth": {
+        "years_required": 2, "years_is_desirable": true, "contract": "plazo_fijo_a_indefinido", "modality": "hibrido",
+        "salary_min_clp": 1600000, "salary_max_clp": 1600000, "salary_is_net": false,
+        "key_skills": ["C/C++", "ESP32", "STM32", "FreeRTOS", "I2C", "SPI", "UART", "LoRaWAN", "MQTT", "KiCad"]
+      }
+    },
+    {
+      "id": "syn-03",
+      "title": "AI Automation Engineer (n8n / LLM)",
+      "text": "Consultora Nube Clara (ficticia) busca AI Automation Engineer para diseñar flujos con n8n y agentes basados en LLM para clientes del sector retail. Responsabilidades: análisis de procesos, integración de APIs REST, prompts con salidas estructuradas, RAG con bases vectoriales y despliegue con Docker. Requisitos: Python o Node.js, SQL, Git. Experiencia: al menos 2 años construyendo soluciones en producción. Trabajo 100% remoto desde Chile. Contrato indefinido. Renta a convenir.",
+      "truth": {
+        "years_required": 2, "years_is_desirable": false, "contract": "indefinido", "modality": "remoto",
+        "salary_min_clp": null, "salary_max_clp": null, "salary_is_net": null,
+        "key_skills": ["n8n", "LLM", "APIs REST", "RAG", "Docker", "Python", "Node.js", "SQL", "Git"]
+      }
+    },
+    {
+      "id": "syn-04",
+      "title": "Ingeniero/a de Confiabilidad - Monitoreo de Condición",
+      "text": "Servicios Mineros del Norte (ficticia) requiere Ingeniero/a de Confiabilidad para monitoreo de condición de correas transportadoras. Analizarás tendencias de vibraciones y temperatura, harás análisis causa raíz (RCA) y propondrás planes de mantenimiento predictivo. Se valorará manejo de Python para análisis de datos y Power BI. No se exige experiencia previa; recién titulados bienvenidos. Contrato a plazo fijo de 6 meses. Modalidad presencial en Calama. Remuneración: $1.400.000 a $1.500.000 brutos.",
+      "truth": {
+        "years_required": 0, "years_is_desirable": false, "contract": "plazo_fijo", "modality": "presencial",
+        "salary_min_clp": 1400000, "salary_max_clp": 1500000, "salary_is_net": false,
+        "key_skills": ["vibraciones", "RCA", "mantenimiento predictivo", "Python", "Power BI"]
+      }
+    },
+    {
+      "id": "syn-05",
+      "title": "Ingeniero/a de Visión Artificial (proyecto)",
+      "text": "Visión Industrial Ltda. (ficticia) necesita Ingeniero/a de Visión Artificial para un proyecto de 2 meses de inspección de calidad en línea de envasado. Entrenarás y optimizarás modelos de detección con PyTorch y YOLO, integrarás cámaras IP vía RTSP y desplegarás en dispositivos edge (Jetson). Requisito: experiencia comprobable con OpenCV. Prestación de servicios a honorarios. Híbrido en Santiago. Honorarios brutos de $2.000.000 mensuales.",
+      "truth": {
+        "years_required": null, "years_is_desirable": false, "contract": "honorarios", "modality": "hibrido",
+        "salary_min_clp": 2000000, "salary_max_clp": 2000000, "salary_is_net": false,
+        "key_skills": ["PyTorch", "YOLO", "RTSP", "Jetson", "OpenCV"]
+      }
+    },
+    {
+      "id": "syn-06",
+      "title": "Ingeniero/a Eléctrico/a de Proyectos BESS",
+      "text": "Energía Solar Atacama (ficticia) busca profesional para proyectos de almacenamiento de energía en baterías (BESS) y plantas fotovoltaicas. Tareas: ingeniería de detalle, especificaciones técnicas, estudios con DIgSILENT PowerFactory y coordinación de protecciones. Se requieren entre 4 y 6 años de experiencia en sistemas de potencia. Modalidad no especificada en esta etapa. Ofrecemos contrato indefinido.",
+      "truth": {
+        "years_required": 4, "years_is_desirable": false, "contract": "indefinido", "modality": "no_indicado",
+        "salary_min_clp": null, "salary_max_clp": null, "salary_is_net": null,
+        "key_skills": ["BESS", "fotovoltaica", "DIgSILENT", "protecciones", "sistemas de potencia"]
+      }
+    }
+  ]
+}

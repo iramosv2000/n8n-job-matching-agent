@@ -11,7 +11,7 @@ containers on macOS cannot use the Apple GPU
 | Tool | Purpose | No-cost option |
 |---|---|---|
 | A Docker engine with Compose v2 | Runs n8n and PostgreSQL | [Colima](https://github.com/abiosoft/colima) (MIT) or Docker Desktop (free for personal use) |
-| Ollama | Local LLM runtime (from M1-07) | [ollama.com](https://ollama.com) |
+| Ollama (official build) | Local LLM runtime (from M1-07) | `brew install --cask ollama-binary` (**not** the `ollama` formula, see below) |
 | Python ≥ 3.9, `pre-commit` | Repository tooling and hooks | `brew install pre-commit` |
 
 **Memory budget on a 16 GB machine:** give the Docker VM about 4 GB (n8n and PostgreSQL
@@ -65,6 +65,20 @@ timestamps, version counters, pinned data and static data, and names each file a
 workflow. `check_workflows.py` rejects data, embedded credentials or secret-looking
 strings ([ADR-0006](../docs/adr/0006-workflow-versioning.md)).
 
+## Ollama: use the official build
+
+Install the official binary (`brew install --cask ollama-binary`) or the app from
+ollama.com. The Homebrew **formula** `ollama` 0.40.4 lacks `libollama_xgrammar.dylib`.
+Without that library, models served by Ollama's MLX engine (for example `qwen3.5`,
+`gemma4`) reject schema-constrained requests with HTTP 501, and the log shows
+"Structured output is unavailable". This was found in M1-07; see
+[`docs/spikes/M1-07-local-llm-benchmark.md`](../docs/spikes/M1-07-local-llm-benchmark.md).
+
+```bash
+ollama serve                    # keep running while the stack uses local models
+ollama pull <model>             # model chosen in ADR-0007
+```
+
 ## Reaching Ollama from n8n
 
 In n8n's Ollama credential, set the base URL to `http://host.docker.internal:11434`.
@@ -72,7 +86,7 @@ In n8n's Ollama credential, set the base URL to `http://host.docker.internal:114
 | Engine | `host.docker.internal` |
 |---|---|
 | Docker Desktop (macOS) | Provided automatically |
-| Colima (macOS) | Mapped to the host by recent versions; verified in M1-07 |
+| Colima (macOS) | Works with Colima 0.10.3, with Ollama bound to `127.0.0.1` (verified in M1-06) |
 | Docker Engine (Linux) | Add `extra_hosts: ["host.docker.internal:host-gateway"]` to the n8n service in a `compose.override.yaml` |
 
 ## Common operations
