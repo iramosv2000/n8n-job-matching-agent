@@ -1,0 +1,45 @@
+# Install once:  pre-commit install   |  Run on everything:  pre-commit run --all-files
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      - id: check-n8n-workflows
+        name: n8n workflow exports (structure, no data, no secrets)
+        entry: python3 scripts/check_workflows.py
+        language: system
+        files: ^workflows/.*\.json$
+      - id: personal-data-guard
+        name: personal and collected data guard
+        entry: python3 scripts/guard_personal_data.py
+        language: system
+        types: [text]
+      - id: unit-tests
+        name: repository tooling tests
+        entry: python3 -m unittest discover -s tests
+        language: system
+        pass_filenames: false
+        files: ^(scripts|tests)/.*\.py$

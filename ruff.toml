@@ -1,0 +1,6 @@
+# Repository tooling targets the system Python on macOS (3.9); services set their own target.
+target-version = "py39"
+line-length = 110
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
