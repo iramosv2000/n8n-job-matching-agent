@@ -1,0 +1,64 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: 8.30.1
+
+jobs:
+  quality:
+    name: Lint, tests, workflow checks, secret scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history for the secret scan
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Pre-commit hooks (all files)
+        uses: pre-commit/action@v3.0.1
+
+      - name: Secret scan of the full Git history
+        run: |
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -sSfLO "${base}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL "${base}/gitleaks_${GITLEAKS_VERSION}_checksums.txt" \
+            | grep "linux_x64.tar.gz" | sha256sum --check -
+          tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
+          ./gitleaks git --redact --verbose
+
+  compose-smoke:
+    name: Compose stack smoke test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Create .env with throwaway secrets
+        run: scripts/init_env.sh
+
+      - name: Start stack and wait for health checks
+        run: docker compose up -d --wait --wait-timeout 300
+
+      - name: Smoke test
+        run: scripts/smoke_test.sh
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs --no-color --tail 200
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
