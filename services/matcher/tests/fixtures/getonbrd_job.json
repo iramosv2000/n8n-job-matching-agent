@@ -1,0 +1,24 @@
+{
+  "_note": "Fictitious item shaped like the Get on Board public API (api/v0, expand=company,seniority,location_cities,modality).",
+  "id": "ingeniero-a-de-automatizacion-andes-procesos-ficticia",
+  "type": "job",
+  "attributes": {
+    "title": "Ingeniero/a de Automatización",
+    "projects": "<p>Proyecto de modernización de <strong>SCADA</strong> en planta concentradora.</p>",
+    "description": "<p>Buscamos ingeniero/a civil electrónico.<br>Contacto: reclutamiento@example.com</p>",
+    "functions": "<ul><li>Programar PLC Rockwell</li><li>Mantener HMI &amp; SCADA</li></ul>",
+    "desirable": "<p>Experiencia con Modbus TCP</p><p>Inglés técnico</p>",
+    "benefits": "<p>Seguro complementario</p>",
+    "remote": false,
+    "remote_modality": "no_remote",
+    "countries": ["Chile"],
+    "min_salary": 2000,
+    "max_salary": 2400,
+    "published_at": 1792116000,
+    "company": {"data": {"id": "andes-procesos", "type": "company", "attributes": {"name": "Andes Procesos SpA"}}},
+    "seniority": {"data": {"id": "2", "type": "seniority", "attributes": {"name": "Semi Senior"}}},
+    "modality": {"data": {"id": "1", "type": "modality", "attributes": {"name": "Full time"}}},
+    "location_cities": {"data": [{"id": "calama", "type": "city", "attributes": {"name": "Calama"}}]}
+  },
+  "links": {"public_url": "https://www.getonbrd.com/jobs/ficticia/ingeniero-a-de-automatizacion"}
+}

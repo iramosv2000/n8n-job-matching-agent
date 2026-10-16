@@ -37,6 +37,12 @@ repos:
         entry: python3 scripts/guard_personal_data.py
         language: system
         types: [text]
+      - id: matcher-tests
+        name: matcher-service tests (coverage gate)
+        entry: uv run --directory services/matcher --frozen pytest -q
+        language: system
+        pass_filenames: false
+        files: ^services/matcher/
       - id: unit-tests
         name: repository tooling tests
         entry: python3 -m unittest discover -s tests

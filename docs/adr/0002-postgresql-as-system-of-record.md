@@ -9,7 +9,7 @@ concurrently: ingestion, Telegram actions and evaluation. n8n itself also needs 
 production-grade database, and its default SQLite is not recommended for concurrent use.
 
 ## Decision
-Use one **PostgreSQL 16** instance with two schemas: `n8n` for n8n's own state and `jobs`
+Use one **PostgreSQL** instance (major version 18, see amendment) with two schemas: `n8n` for n8n's own state and `jobs`
 for the application data. Schema changes are versioned SQL migrations.
 
 ## Alternatives considered
@@ -22,3 +22,13 @@ for the application data. Schema changes are versioned SQL migrations.
 ## Consequences
 - The As-Is SQLite history can be imported once with a migration script (optional).
 - JSONB stores extractor outputs, so the schema does not have to change with each new field.
+
+## Amendment (2026-10-16, M2-01): PostgreSQL 18
+
+The original record named PostgreSQL 16. When the stack ran with n8n 2.42.7, n8n logged
+"Postgres 16 is outside the supported range and receives compatibility support only.
+Upgrade to Postgres 17 or newer." The stack was moved to **`postgres:18.6-alpine`** before
+any real data existed. PostgreSQL 18 is the newest major, already has six patch releases,
+and has the longest support window. Images from 18 onwards keep data under a versioned
+subdirectory, so the volume is mounted at `/var/lib/postgresql`. Schema migrations are
+applied by a one-shot `migrate` service (dbmate 2.36.0) on every `docker compose up`.

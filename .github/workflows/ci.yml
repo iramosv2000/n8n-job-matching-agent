@@ -28,6 +28,10 @@ jobs:
         with:
           python-version: "3.12"
 
+      - uses: astral-sh/setup-uv@v10.3.0 # astral publishes exact version tags only
+        with:
+          version: "0.13.1"
+
       - name: Pre-commit hooks (all files)
         uses: pre-commit/action@v3.0.1
 
@@ -40,6 +44,25 @@ jobs:
           tar -xzf "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" gitleaks
           ./gitleaks git --redact --verbose
 
+  matcher-service:
+    name: matcher-service tests (coverage >= 90 %)
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: services/matcher
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10.3.0 # astral publishes exact version tags only
+        with:
+          version: "0.13.1"
+
+      - name: Install locked dependencies
+        run: uv sync --frozen
+
+      - name: Tests with coverage gate
+        run: uv run pytest
+
   compose-smoke:
     name: Compose stack smoke test
     runs-on: ubuntu-24.04
@@ -49,8 +72,8 @@ jobs:
       - name: Create .env with throwaway secrets
         run: scripts/init_env.sh
 
-      - name: Start stack and wait for health checks
-        run: docker compose up -d --wait --wait-timeout 300
+      - name: Build and start stack, wait for health checks
+        run: docker compose up -d --build --wait --wait-timeout 300
 
       - name: Smoke test
         run: scripts/smoke_test.sh
