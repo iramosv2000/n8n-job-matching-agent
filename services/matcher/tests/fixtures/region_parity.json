@@ -1,0 +1,501 @@
+{
+ "_note": "Expected regions computed with the As-Is analisis.extraer_region on location strings seen by the As-Is tool (2026-10-14). Used as a parity oracle.",
+ "cases": [
+  {
+   "location": "",
+   "region": "No indicada"
+  },
+  {
+   "location": "Antofagasta, AN",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Antofagasta, Antofagasta",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Argentina",
+   "region": "Otra / no identificada"
+  },
+  {
+   "location": "Arica, Arica y Parinacota",
+   "region": "Arica y Parinacota"
+  },
+  {
+   "location": "Bogotá, Colombia",
+   "region": "Otra / no identificada"
+  },
+  {
+   "location": "Buenos Aires, Argentina",
+   "region": "Otra / no identificada"
+  },
+  {
+   "location": "Calama",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Calama, AN",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Calama, Antofagasta",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Calbuco, Los Lagos",
+   "region": "Los Lagos"
+  },
+  {
+   "location": "Chañaral, AT",
+   "region": "Atacama"
+  },
+  {
+   "location": "Chañaral, Atacama",
+   "region": "Atacama"
+  },
+  {
+   "location": "Chillán, Bíobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Chillán, NB",
+   "region": "Ñuble"
+  },
+  {
+   "location": "Ciudad de México, Mexico",
+   "region": "Otra / no identificada"
+  },
+  {
+   "location": "Ciudad de México, Santiago, Lima, Peru, Mexico",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Colina, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Colina, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Colina, RM",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Concepción, BI",
+   "region": "Biobío"
+  },
+  {
+   "location": "Concepción, Biobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Concepción, Bíobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Concepción, Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Concon, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Copiapó, AT",
+   "region": "Atacama"
+  },
+  {
+   "location": "Copiapó, Atacama",
+   "region": "Atacama"
+  },
+  {
+   "location": "Coquimbo, CO",
+   "region": "Coquimbo"
+  },
+  {
+   "location": "Coquimbo, Coquimbo",
+   "region": "Coquimbo"
+  },
+  {
+   "location": "Curicó, ML",
+   "region": "Maule"
+  },
+  {
+   "location": "Curicó, Maule",
+   "region": "Maule"
+  },
+  {
+   "location": "Diego de Almagro, Atacama",
+   "region": "Atacama"
+  },
+  {
+   "location": "Estación Central, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Hualpén, Bíobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Huechuraba, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Independencia, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Iquique",
+   "region": "Tarapacá"
+  },
+  {
+   "location": "Iquique, TA",
+   "region": "Tarapacá"
+  },
+  {
+   "location": "Iquique, Tarapacá",
+   "region": "Tarapacá"
+  },
+  {
+   "location": "La Serena, CO",
+   "region": "Coquimbo"
+  },
+  {
+   "location": "La Serena, Coquimbo",
+   "region": "Coquimbo"
+  },
+  {
+   "location": "La Unión, Los Ríos",
+   "region": "Los Ríos"
+  },
+  {
+   "location": "Laja, Biobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Lampa, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Lampa, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Las Condes, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Lautaro 123, Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Lebu, Biobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Lima, Peru",
+   "region": "Otra / no identificada"
+  },
+  {
+   "location": "Linares, Maule",
+   "region": "Maule"
+  },
+  {
+   "location": "Llaillay, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Llayllay, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Los Andes, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Los Álamos, Biobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Los Ángeles, BI",
+   "region": "Biobío"
+  },
+  {
+   "location": "Los Ángeles, Biobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Los Ángeles, Bíobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "María Elena, Antofagasta",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Mejillones, Antofagasta",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Montevideo, Uruguay",
+   "region": "Otra / no identificada"
+  },
+  {
+   "location": "Mostazal, Lib. Gral. Bdo. O'Higgins",
+   "region": "O'Higgins"
+  },
+  {
+   "location": "Mostazal, Libertador B. O Higgins",
+   "region": "O'Higgins"
+  },
+  {
+   "location": "Osorno, Los Lagos",
+   "region": "Los Lagos"
+  },
+  {
+   "location": "Ovalle, Coquimbo",
+   "region": "Coquimbo"
+  },
+  {
+   "location": "Padre Hurtado, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Pozo Almonte, TA",
+   "region": "Tarapacá"
+  },
+  {
+   "location": "Providencia, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Puchuncaví, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Pudahuel, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Puente Alto, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Puente Alto, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Puente Alto, RM",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Puerto Montt, LL",
+   "region": "Los Lagos"
+  },
+  {
+   "location": "Puerto Montt, Los Lagos",
+   "region": "Los Lagos"
+  },
+  {
+   "location": "Puerto Varas, Los Lagos",
+   "region": "Los Lagos"
+  },
+  {
+   "location": "Punta Arenas, Magallanes y Antártica Chilena",
+   "region": "Magallanes"
+  },
+  {
+   "location": "Quilicura, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Quillota, VS",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Rancagua, LI",
+   "region": "O'Higgins"
+  },
+  {
+   "location": "Rancagua, Lib. Gral. Bdo. O'Higgins",
+   "region": "O'Higgins"
+  },
+  {
+   "location": "Rancagua, Libertador B. O Higgins",
+   "region": "O'Higgins"
+  },
+  {
+   "location": "Remoto",
+   "region": "Remoto"
+  },
+  {
+   "location": "Renca, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "San Antonio, VS",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "San Antonio, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "San Bernardo, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "San Bernardo, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "San Fernando, Lib. Gral. Bdo. O'Higgins",
+   "region": "O'Higgins"
+  },
+  {
+   "location": "San José de Maipo, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "San Miguel, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Cerrillos, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Huechuraba, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Las condes, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Lo Barnechea, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Macul, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Maipú, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Providencia, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Pudahuel, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Quilicura, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Renca, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - San Miguel, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - Vitacura, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago - conchalí, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago Centro, R.Metropolitana",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago, Ciudad de México, Mexico",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Santiago, RM",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Sierra Gorda, Antofagasta",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Talca, Maule",
+   "region": "Maule"
+  },
+  {
+   "location": "Talcahuano, Biobío",
+   "region": "Biobío"
+  },
+  {
+   "location": "Taltal, Antofagasta",
+   "region": "Antofagasta"
+  },
+  {
+   "location": "Temuco, AR",
+   "region": "Araucanía"
+  },
+  {
+   "location": "Temuco, Araucanía",
+   "region": "Araucanía"
+  },
+  {
+   "location": "Tierra Amarilla, Atacama",
+   "region": "Atacama"
+  },
+  {
+   "location": "Valdivia, LR",
+   "region": "Los Ríos"
+  },
+  {
+   "location": "Valparaíso, VS",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Valparaíso, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Vitacura, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  },
+  {
+   "location": "Viña del Mar",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "Viña del Mar, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "concón, Valparaíso",
+   "region": "Valparaíso"
+  },
+  {
+   "location": "constitución, Maule",
+   "region": "Maule"
+  },
+  {
+   "location": "Ñuñoa, Metropolitana de Santiago",
+   "region": "Metropolitana"
+  }
+ ]
+}

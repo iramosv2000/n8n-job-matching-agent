@@ -1,8 +1,8 @@
 # infra/
 
-Local platform for the project: n8n (Community Edition) and PostgreSQL 16 on a private
-Docker network, defined in [`../compose.yaml`](../compose.yaml). matcher-service joins in
-M2. The local LLM runtime (Ollama) runs **natively on the host**, not in Docker, because
+Local platform for the project: n8n (Community Edition), PostgreSQL 18, schema migrations
+(dbmate) and matcher-service on a private Docker network, defined in
+[`../compose.yaml`](../compose.yaml). The local LLM runtime (Ollama) runs **natively on the host**, not in Docker, because
 containers on macOS cannot use the Apple GPU
 ([ADR-0007](../docs/adr/0007-zero-cost-provider-agnostic-llm.md)).
 
@@ -33,7 +33,8 @@ n8n is published on `127.0.0.1:5678` only, so it is not reachable from the LAN.
 
 | Path | Content |
 |---|---|
-| `../compose.yaml` | Services, health checks, pinned images (`postgres:16.15-alpine`, `n8n:2.42.7`) |
+| `../compose.yaml` | Services, health checks, pinned images (`postgres:18.6-alpine`, `dbmate:2.36.0`, `n8n:2.42.7`); `matcher` built from `services/matcher` |
+| `../db/migrations/` | SQL migrations, applied by the one-shot `migrate` service before n8n and matcher start |
 | `postgres/init/01-schemas.sql` | Creates schemas `n8n` (n8n's own tables) and `jobs` (application data) on first start |
 | `../.env.example` | Variables; `scripts/init_env.sh` turns it into `.env` |
 

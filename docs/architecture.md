@@ -22,7 +22,7 @@ that forbid it or need authentication (LinkedIn, Indeed, Laborum), and multi-ten
 |---|---|---|---|
 | **Orchestrator** | n8n Community Edition, self-hosted in Docker | Schedules, control flow, retries, integrations (HTTP, Telegram, PostgreSQL, LLM providers), human-in-the-loop, error handling | Hold business logic that needs unit tests |
 | **matcher-service** | Python 3.12, FastAPI, Pydantic | Source adapters (HTML/JSON-LD), normalisation, rule-based extraction, scoring, deduplication, CV guardrail validator | Call the LLM, or hold orchestration state |
-| **Database** | PostgreSQL 16 | System of record for offers, features, applications, LLM calls and runs; also n8n's own database (separate schema) | — |
+| **Database** | PostgreSQL 18 (migrations: dbmate) | System of record for offers, features, applications, LLM calls and runs; also n8n's own database (separate schema) | — |
 | **LLM router** | n8n sub-workflow (WF-10) | Applies the per-task provider policy, enforces JSON-schema output, handles quota fallback and logs every call ([ADR-0007](adr/0007-zero-cost-provider-agnostic-llm.md)) | Send personal data to an unpaid external service |
 | **LLM providers** | Gemini API free tier (public data); Ollama, native on the host (personal data); Claude API (optional) | Requirement extraction and CV-section generation | Make final decisions; the score and the guardrail are deterministic |
 | **Notification channel** | Telegram Bot API | Daily digest, action buttons, alerts, delivery of generated `.tex` sections | Expose personal data in group chats (private chat only) |
