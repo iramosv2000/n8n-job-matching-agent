@@ -48,7 +48,7 @@ the acceptance criterion copied into each issue.
 | M2-02 | matcher-service skeleton | FastAPI with Pydantic models, `/health`, `/normalize` (including PII redaction), tests ≥ 90 % line coverage on the module | type:feature, area:service |
 | M2-03 | WF-01 Get on Board ingestion | Scheduled workflow pages through queries and categories, upserts offers and records per-source counts | type:feature, area:n8n |
 | M2-04 | Cross-source deduplication | `/dedupe` ported from the As-Is with tests; duplicates linked through `duplicate_of` | type:feature, area:service |
-| M2-05 | Optional source adapters | Adapters behind feature flags; `robots.txt` check, rate limiting and synthetic-fixture tests | type:feature, area:service |
+| M2-05 | Optional source adapters | Terms reviewed per source (ADR-0008); Chiletrabajos adapter behind `MATCHER_ENABLED_SOURCES` with `robots.txt` checks, rate limiting and synthetic-fixture tests; excluded sources documented | type:feature, area:service |
 | M2-06 | Measure the arrival rate | Two weeks of runs summarised (new offers/day, per source); fit against the Gemini free-tier quota (as shown in AI Studio, with date) recorded in ADR-0007 | type:spike, area:llm |
 
 ## M3 Enrichment & scoring
@@ -60,7 +60,7 @@ the acceptance criterion copied into each issue.
 | M3-03 | Extraction schema and prompt v1 | Versioned JSON Schema and prompt in the repository; validated on the development set | type:feature, area:llm |
 | M3-04 | WF-02 LLM structured extraction | Pre-filtered offers are extracted through WF-10 (Gemini free tier, then local fallback) with schema-valid output; every call logged in `llm_calls` with its provider | type:feature, area:n8n, area:llm |
 | M3-05 | Hybrid merge and feature storage | Merge policy implemented; `offer_features` append-only per extractor and version | type:feature, area:service, area:db |
-| M3-07 | WF-10 LLM router | Per-task provider policy, daily quota counter and 429/5xx fallback implemented; a unit test proves the CV route can never select an unpaid external provider | type:feature, area:n8n, area:llm |
+| M3-07 | WF-10 LLM router | Per-task provider policy, daily quota counter and 429/5xx fallback implemented; per-source restriction (`external_llm_allowed`) enforced; unit tests prove CV text and restricted-source offers never reach an unpaid external provider | type:feature, area:n8n, area:llm |
 | M3-06 | Fictitious example profile | `profiles/example/` contains a realistic, fully fictitious profile and CV used by tests and demo | type:docs |
 
 ## M4 Notifications (MVP)
@@ -68,9 +68,10 @@ the acceptance criterion copied into each issue.
 | ID | Issue | Done when | Labels |
 |---|---|---|---|
 | M4-01 | Telegram bot setup | Bot answers only the allow-listed private chat; setup documented | type:feature, area:n8n |
-| M4-02 | WF-03 daily digest | Top-N new offers above threshold are delivered with score, key facts and links | type:feature, area:n8n |
+| M4-02 | WF-03 daily digest | Top-N new offers above threshold are delivered with score, key facts and links, plus search links to excluded boards (ADR-0008) | type:feature, area:n8n |
 | M4-03 | WF-04 actions and application tracking | Buttons update `applications` with valid status transitions; idempotent on repeated taps | type:feature, area:n8n, area:db |
 | M4-04 | WF-08 error alerts | Any workflow failure produces an alert with workflow, node and run ID | type:feature, area:n8n |
+| M4-06 | Manual offer intake via Telegram | Forwarded offer text or URL is ingested as source `manual`, then normalised, deduplicated and scored like any other offer (ADR-0008) | type:feature, area:n8n, area:service |
 | M4-05 | MVP quickstart and demo | README quickstart verified from a clean clone; screenshots or a GIF of the digest | type:docs |
 
 ## M5 CV agent + guardrail

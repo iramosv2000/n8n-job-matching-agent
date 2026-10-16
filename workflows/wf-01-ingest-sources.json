@@ -44,7 +44,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Search configuration, versioned with this workflow (mirrors the As-Is config.json).\nconst config = {\n  daysBack: 21,\n  pages: 2,\n  perPage: 50,\n  categories: ['hardware-electronics', 'machine-learning-ai'],\n  queries: [\n    'ingeniero electronico', 'ingeniero civil electronico', 'ingeniero electrico',\n    'ingeniero automatizacion', 'ingeniero control', 'instrumentacion', 'telecomunicaciones',\n    'sistemas embebidos', 'hardware', 'plc scada', 'iot', 'ai engineer',\n    'inteligencia artificial', 'machine learning', 'vision artificial',\n  ],\n};\n// 'production' = fired by the active schedule; anything else is a manual/CLI/test run.\nconst trigger = $execution.mode === 'production' ? 'schedule' : 'manual';\nreturn [{ json: { trigger, config } }];\n"
+        "jsCode": "// Search configuration, versioned with this workflow (mirrors the As-Is config.json).\nconst config = {\n  daysBack: 21,\n  pages: 2,\n  perPage: 50,\n  // Optional sources (Chiletrabajos) are enabled in matcher via MATCHER_ENABLED_SOURCES (ADR-0008).\n  optionalMaxDetails: 60,\n  categories: ['hardware-electronics', 'machine-learning-ai'],\n  queries: [\n    'ingeniero electronico', 'ingeniero civil electronico', 'ingeniero electrico',\n    'ingeniero automatizacion', 'ingeniero control', 'instrumentacion', 'telecomunicaciones',\n    'sistemas embebidos', 'hardware', 'plc scada', 'iot', 'ai engineer',\n    'inteligencia artificial', 'machine learning', 'vision artificial',\n  ],\n};\n// 'production' = fired by the active schedule; anything else is a manual/CLI/test run.\nconst trigger = $execution.mode === 'production' ? 'schedule' : 'manual';\nreturn [{ json: { trigger, config } }];\n"
       }
     },
     {
@@ -155,8 +155,8 @@
       "onError": "continueRegularOutput"
     },
     {
-      "id": "wf01-collect",
-      "name": "Collect",
+      "id": "wf01-collect-get-on-board",
+      "name": "Collect Get on Board",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -164,7 +164,62 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Flatten API pages, keep recent jobs, de-duplicate ids within the run, count errors.\nconst { config } = $('Config').first().json;\nconst cutoff = Date.now() / 1000 - config.daysBack * 86400;\nconst seen = new Set();\nconst items = [];\nlet fetched = 0, errors = 0, errorSample = null;\nfor (const response of $input.all()) {\n  if (response.json.error) {\n    errors++;\n    errorSample ??= String(response.json.error.message ?? JSON.stringify(response.json.error)).slice(0, 300);\n    continue;\n  }\n  for (const job of response.json.data ?? []) {\n    fetched++;\n    if ((job.attributes?.published_at ?? 0) < cutoff || seen.has(job.id)) continue;\n    seen.add(job.id);\n    items.push(job);\n  }\n}\n// USD->CLP: mindicador.cl (Banco Central series), else open.er-api.com, else null (salary kept as USD note).\nconst usd = $('USD rate').first().json?.serie?.[0]?.valor\n  ?? $('USD rate (fallback)').first().json?.rates?.CLP\n  ?? null;\nreturn [{ json: { source: 'getonbrd', items, usd_clp: usd, fetched, errors, error_sample: errorSample } }];\n"
+        "jsCode": "// Flatten API pages, keep recent jobs, de-duplicate ids within the run, count errors.\nconst { config } = $('Config').first().json;\nconst cutoff = Date.now() / 1000 - config.daysBack * 86400;\nconst seen = new Set();\nconst items = [];\nlet fetched = 0, errors = 0, errorSample = null;\nfor (const response of $input.all()) {\n  if (response.json.error) {\n    errors++;\n    errorSample ??= String(response.json.error.message ?? JSON.stringify(response.json.error)).slice(0, 300);\n    continue;\n  }\n  for (const job of response.json.data ?? []) {\n    fetched++;\n    if ((job.attributes?.published_at ?? 0) < cutoff || seen.has(job.id)) continue;\n    seen.add(job.id);\n    items.push(job);\n  }\n}\n// USD->CLP: mindicador.cl (Banco Central series), else open.er-api.com, else null (salary kept as USD note).\nreturn [{ json: { source: 'getonbrd', items, fetched, errors, error_sample: errorSample } }];\n"
+      }
+    },
+    {
+      "id": "wf01-known-ids",
+      "name": "Known ids",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT coalesce(jsonb_agg(offer_id), '[]'::jsonb) AS known\n  FROM jobs.offers WHERE last_seen > now() - interval '60 days';",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "jobsPostgres0001",
+          "name": "jobs-postgres (local)"
+        }
+      }
+    },
+    {
+      "id": "wf01-optional-sources",
+      "name": "Optional sources",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://matcher:8000/sources/fetch-enabled",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ queries: $('Config').first().json.config.queries, days: $('Config').first().json.config.daysBack, pages: $('Config').first().json.config.pages, max_details: $('Config').first().json.config.optionalMaxDetails, known_ids: $json.known }) }}",
+        "options": {
+          "timeout": 900000
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf01-batches",
+      "name": "Batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// One item per source batch: Get on Board (fetched by n8n) + enabled optional sources (fetched by matcher).\n// USD->CLP: mindicador.cl (Banco Central series), else open.er-api.com, else null (salary kept as USD note).\nconst usd = $('USD rate').first().json?.serie?.[0]?.valor\n  ?? $('USD rate (fallback)').first().json?.rates?.CLP\n  ?? null;\nconst batches = [$('Collect Get on Board').first().json];\n// A failed call to matcher is recorded by \"Combine\" as source 'optional-sources'; it has nothing to normalise.\nfor (const b of $('Optional sources').first().json.batches ?? []) {\n  batches.push({ source: b.source, items: b.items, fetched: b.listed, errors: b.errors, error_sample: b.error_sample });\n}\nreturn batches.map((b) => ({ json: { ...b, usd_clp: usd } }));\n"
       }
     },
     {
@@ -173,7 +228,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1760,
+        2420,
         0
       ],
       "parameters": {
@@ -185,6 +240,20 @@
         "options": {
           "timeout": 120000
         }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf01-combine",
+      "name": "Combine",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Merge normalised offers from every batch; per-source stats for the run log.\nconst batches = $('Batches').all().map((i) => i.json);\nconst normalized = $input.all().map((i) => i.json);\nconst offers = [];\nconst stats = batches.map((b, idx) => {\n  const n = normalized[idx] ?? {};\n  offers.push(...(n.offers ?? []));\n  const rejected = (n.rejected ?? []).length;\n  return { source: b.source, fetched: b.fetched, errors: b.errors + rejected + (n.error ? 1 : 0),\n           error_sample: b.error_sample ?? (rejected ? `rejected: ${n.rejected[0].reason}` : null) ?? '' };\n});\nconst optionalError = $('Optional sources').first().json.error;\nif (optionalError) {\n  stats.push({ source: 'optional-sources', fetched: 0, errors: 1,\n               error_sample: String(optionalError.message ?? 'optional sources failed').slice(0, 300) });\n}\nreturn [{ json: { offers, stats } }];\n"
       }
     },
     {
@@ -193,7 +262,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        1980,
+        2860,
         0
       ],
       "parameters": {
@@ -214,7 +283,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        2200,
+        3080,
         0
       ],
       "parameters": {
@@ -222,7 +291,7 @@
         "url": "http://matcher:8000/dedupe",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ candidates: $('Normalize').first().json.offers.map(o => ({ offer_id: o.offer_id, title: o.title, company: o.company, region: o.region })), existing: $json.existing }) }}",
+        "jsonBody": "={{ JSON.stringify({ candidates: $('Combine').first().json.offers.map(o => ({ offer_id: o.offer_id, title: o.title, company: o.company, region: o.region })), existing: $json.existing }) }}",
         "options": {
           "timeout": 120000
         }
@@ -234,14 +303,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2420,
+        3300,
         0
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH input AS (\n    SELECT x.*, d.duplicate_of\n      FROM jsonb_to_recordset($1::jsonb) AS x(\n               offer_id text, source text, url text, title text, company text, location_raw text,\n               region text, published_at date, description text, structured jsonb, raw jsonb,\n               content_hash text)\n      LEFT JOIN jsonb_to_recordset($2::jsonb) AS d(offer_id text, duplicate_of text) USING (offer_id)\n), previous AS (\n    SELECT o.offer_id, o.content_hash FROM jobs.offers o JOIN input i USING (offer_id)\n), upsert AS (\n    INSERT INTO jobs.offers AS o (offer_id, source, url, title, company, location_raw, region, published_at,\n                                  description, structured, raw, content_hash, first_run_id, duplicate_of)\n    SELECT offer_id, source, url, title, company, location_raw, region, published_at,\n           description, structured, raw, content_hash, $3::uuid, duplicate_of\n      FROM input\n    ON CONFLICT (offer_id) DO UPDATE SET\n        url = EXCLUDED.url, title = EXCLUDED.title, company = EXCLUDED.company,\n        location_raw = EXCLUDED.location_raw, region = EXCLUDED.region,\n        published_at = EXCLUDED.published_at, description = EXCLUDED.description,\n        structured = EXCLUDED.structured, raw = EXCLUDED.raw, content_hash = EXCLUDED.content_hash,\n        last_seen = now(), duplicate_of = coalesce(o.duplicate_of, EXCLUDED.duplicate_of)\n    RETURNING 1\n)\nSELECT (SELECT count(*) FROM upsert)::int AS upserted,\n       (SELECT count(*) FROM input WHERE offer_id NOT IN (SELECT offer_id FROM previous))::int AS new,\n       (SELECT count(*) FROM input i JOIN previous p USING (offer_id)\n         WHERE p.content_hash <> i.content_hash)::int AS updated;",
+        "query": "WITH input AS (\n    SELECT x.*, d.duplicate_of\n      FROM jsonb_to_recordset($1::jsonb) AS x(\n               offer_id text, source text, url text, title text, company text, location_raw text,\n               region text, published_at date, description text, structured jsonb, raw jsonb,\n               content_hash text)\n      LEFT JOIN jsonb_to_recordset($2::jsonb) AS d(offer_id text, duplicate_of text) USING (offer_id)\n), previous AS (\n    SELECT o.offer_id, o.content_hash FROM jobs.offers o JOIN input i USING (offer_id)\n), upsert AS (\n    INSERT INTO jobs.offers AS o (offer_id, source, url, title, company, location_raw, region, published_at,\n                                  description, structured, raw, content_hash, first_run_id, duplicate_of)\n    SELECT offer_id, source, url, title, company, location_raw, region, published_at,\n           description, structured, raw, content_hash, $3::uuid, duplicate_of\n      FROM input\n    ON CONFLICT (offer_id) DO UPDATE SET\n        url = EXCLUDED.url, title = EXCLUDED.title, company = EXCLUDED.company,\n        location_raw = EXCLUDED.location_raw, region = EXCLUDED.region,\n        published_at = EXCLUDED.published_at, description = EXCLUDED.description,\n        structured = EXCLUDED.structured, raw = EXCLUDED.raw, content_hash = EXCLUDED.content_hash,\n        last_seen = now(), duplicate_of = coalesce(o.duplicate_of, EXCLUDED.duplicate_of)\n    RETURNING 1\n)\n-- Data-modifying CTEs always run to completion; previous reflects the state before the upsert.\nSELECT coalesce(jsonb_agg(jsonb_build_object('source', source, 'new', new, 'updated', updated)), '[]'::jsonb)\n       AS counts\n  FROM (SELECT i.source,\n               count(*) FILTER (WHERE p.offer_id IS NULL)::int AS new,\n               count(*) FILTER (WHERE p.offer_id IS NOT NULL AND p.content_hash <> i.content_hash)::int AS updated\n          FROM input i LEFT JOIN previous p USING (offer_id)\n         GROUP BY i.source) per_source;",
         "options": {
-          "queryReplacement": "={{ [ JSON.stringify($('Normalize').first().json.offers), JSON.stringify($json.links), $('Start run').first().json.run_id ] }}"
+          "queryReplacement": "={{ [ JSON.stringify($('Combine').first().json.offers), JSON.stringify($json.links), $('Start run').first().json.run_id ] }}"
         }
       },
       "credentials": {
@@ -257,14 +326,14 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.7,
       "position": [
-        2640,
+        3520,
         0
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "WITH s AS (\n    INSERT INTO jobs.run_sources (run_id, source, fetched, new, updated, errors, error_sample)\n    VALUES ($1::uuid, 'getonbrd', $2::int, $3::int, $4::int, $5::int, nullif($6, ''))\n    RETURNING fetched, errors\n)\nUPDATE jobs.runs\n   SET finished_at = now(),\n       status = CASE WHEN (SELECT errors FROM s) = 0 THEN 'succeeded'\n                     WHEN (SELECT fetched FROM s) > 0 THEN 'partial'\n                     ELSE 'failed' END\n WHERE run_id = $1::uuid\nRETURNING run_id, status, extract(epoch FROM finished_at - started_at)::int AS seconds;",
+        "query": "WITH stats AS (\n    SELECT * FROM jsonb_to_recordset($2::jsonb) AS x(source text, fetched int, errors int, error_sample text)\n), counts AS (\n    SELECT * FROM jsonb_to_recordset($3::jsonb) AS c(source text, new int, updated int)\n), s AS (\n    INSERT INTO jobs.run_sources (run_id, source, fetched, new, updated, errors, error_sample)\n    SELECT $1::uuid, st.source, st.fetched, coalesce(c.new, 0), coalesce(c.updated, 0), st.errors,\n           nullif(st.error_sample, '')\n      FROM stats st LEFT JOIN counts c USING (source)\n    RETURNING fetched, errors\n)\nUPDATE jobs.runs\n   SET finished_at = now(),\n       status = CASE WHEN (SELECT sum(errors) FROM s) = 0 THEN 'succeeded'\n                     WHEN (SELECT sum(fetched) FROM s) > 0 THEN 'partial'\n                     ELSE 'failed' END\n WHERE run_id = $1::uuid\nRETURNING run_id, status, extract(epoch FROM finished_at - started_at)::int AS seconds;",
         "options": {
-          "queryReplacement": "={{ [ $('Start run').first().json.run_id, $('Collect').first().json.fetched, $json.new, $json.updated, $('Collect').first().json.errors + $('Normalize').first().json.rejected.length, $('Collect').first().json.error_sample ?? '' ] }}"
+          "queryReplacement": "={{ [ $('Start run').first().json.run_id, JSON.stringify($('Combine').first().json.stats), JSON.stringify($json.counts) ] }}"
         }
       },
       "credentials": {
@@ -335,14 +404,47 @@
       "main": [
         [
           {
-            "node": "Collect",
+            "node": "Collect Get on Board",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Collect": {
+    "Collect Get on Board": {
+      "main": [
+        [
+          {
+            "node": "Known ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Known ids": {
+      "main": [
+        [
+          {
+            "node": "Optional sources",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Optional sources": {
+      "main": [
+        [
+          {
+            "node": "Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Batches": {
       "main": [
         [
           {
@@ -354,6 +456,17 @@
       ]
     },
     "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Combine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine": {
       "main": [
         [
           {

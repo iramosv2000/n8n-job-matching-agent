@@ -10,14 +10,18 @@ Exported n8n workflows, one pretty-printed JSON file per workflow, produced by
 | File | Workflow | Trigger | Status |
 |---|---|---|---|
 | `wf-00-smoke-test.json` | Minimal workflow that CI imports to prove the round trip | Manual | ✔ |
-| `wf-01-ingest-sources.json` | **WF-01 ingest-sources**: Get on Board → matcher `/normalize` → `/dedupe` → upsert `jobs.offers` → run counts | Weekdays 08:00 (America/Santiago) + manual | ✔ M2 |
+| `wf-01-ingest-sources.json` | **WF-01 ingest-sources**: Get on Board (API) + enabled optional sources (matcher) → `/normalize` → `/dedupe` → upsert `jobs.offers` → per-source run counts | Weekdays 08:00 (America/Santiago) + manual | ✔ M2 |
 
 ### WF-01 in brief
 
 ```
-Config ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build requests ─▶ Get on Board API ─▶ Collect
-   ─▶ Normalize (matcher) ─▶ Recent offers ─▶ Dedupe (matcher) ─▶ Upsert offers ─▶ Finish run
+Config ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build requests ─▶ Get on Board API
+   ─▶ Collect Get on Board ─▶ Known ids ─▶ Optional sources (matcher /sources/fetch-enabled)
+   ─▶ Batches (one per source) ─▶ Normalize ─▶ Combine ─▶ Recent offers ─▶ Dedupe ─▶ Upsert ─▶ Finish run
 ```
+
+The pipeline is linear on purpose. It behaves the same with zero, one or several optional
+sources enabled, and needs no Merge node waiting on a branch that may produce nothing.
 
 - **Search configuration** (categories, queries, pages, 21-day window) lives in the `Config`
   node, so changes to it are versioned with the workflow.
@@ -31,6 +35,10 @@ Config ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build 
   next run.
 - **CLI runs** (`scripts/run_ingestion.sh`) are recorded with trigger `schedule`, because
   n8n reports CLI executions as production executions.
+
+**Importing:** `import_workflows.sh` re-publishes workflows that were active before the
+import, because n8n deactivates them on import, and `check_workflows.py` rejects two files
+with the same workflow id, which would overwrite each other.
 
 Setup on a new machine: `scripts/bootstrap_credentials.sh` (Postgres credential), then
 `scripts/import_workflows.sh`. To schedule WF-01, activate it in the editor or with

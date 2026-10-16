@@ -5,7 +5,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-Source = Literal["getonbrd"]
+Source = Literal["getonbrd", "chiletrabajos"]
 
 
 class Structured(BaseModel):
@@ -88,3 +88,41 @@ class DedupeResponse(BaseModel):
 class Health(BaseModel):
     status: Literal["ok"]
     version: str
+
+
+class SourceInfo(BaseModel):
+    """Per-source policy (ADR-0008). The LLM router reads external_llm_allowed (M3)."""
+
+    name: Source
+    enabled: bool
+    fetched_by: Literal["n8n", "matcher"]
+    external_llm_allowed: bool = Field(
+        description="Whether offer text may be sent to external (free-tier) LLM APIs"
+    )
+    terms_reviewed: str = Field(description="Date the source's terms of use were last reviewed")
+    terms_url: str
+
+
+class SourceFetchRequest(BaseModel):
+    queries: list[str] = Field(min_length=1, max_length=30)
+    days: int = Field(default=21, ge=1, le=60)
+    pages: int = Field(default=2, ge=1, le=5)
+    max_details: int = Field(default=60, ge=0, le=200, description="Cap on detail pages downloaded per run")
+    known_ids: list[str] = Field(
+        default_factory=list, description="offer_ids already stored; their details are not re-downloaded"
+    )
+
+
+class SourceFetchResponse(BaseModel):
+    source: Source
+    items: list[dict[str, Any]]
+    listed: int = Field(description="Listing entries seen")
+    candidates: int = Field(description="Distinct recent offers in the listings")
+    skipped_known: int
+    errors: int
+    error_sample: str | None = None
+    robots_checked_at: dict[str, str]
+
+
+class FetchEnabledResponse(BaseModel):
+    batches: list[SourceFetchResponse] = Field(description="One batch per enabled optional source")

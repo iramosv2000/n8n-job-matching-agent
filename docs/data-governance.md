@@ -14,19 +14,27 @@
 
 ## 2. Source policy
 
-1. **Primary source: Get on Board public API**, which is documented and needs no
-   authentication for public job data (see the
-   [technical reference](https://api-doc.getonbrd.com/?version=latest)).
-2. **Optional adapters** (Trabajando.cl, Computrabajo, Chiletrabajos) are disabled by
-   default and must:
-   - follow the site's `robots.txt` (checked at startup, with the check date logged);
-   - wait ≥ 0.8 s between requests to the same host and back off on HTTP 429/5xx;
-   - send an identifiable User-Agent with a contact URL (the repository);
-   - fetch only public pages, without logins or CAPTCHA circumvention.
-3. **Never collected:** sites that need authentication or forbid automated access
-   (LinkedIn, Indeed, Laborum). For these the digest contains pre-built search links only.
-4. Each adapter's terms of use are reviewed before the adapter is enabled, and the review
-   date is recorded in the adapter's docstring.
+General rules ([ADR-0003](adr/0003-source-policy-api-first.md)). The per-source outcome of
+the 2026-10-16 terms review is in [ADR-0008](adr/0008-source-by-source-decisions.md).
+
+| Source | Status | Access | External LLM APIs |
+|---|---|---|---|
+| Get on Board | Enabled | Documented public API, called by n8n | Allowed (redacted text) |
+| Chiletrabajos | Optional, off by default | HTML + JSON-LD through matcher's `PoliteClient` | **Not allowed**: local model only |
+| Trabajando.cl | **Excluded** | The terms prohibit aggregating or copying content | — |
+| Computrabajo | **Excluded** | Refuses automated clients (HTTP 403) | — |
+| LinkedIn, Indeed, Laborum | **Excluded** | Authentication or anti-bot protection | — |
+
+Every enabled adapter must:
+- check `robots.txt` before **every** request, and treat an unreadable or refused robots
+  file as "nothing allowed";
+- space requests (≥ 0.8 s per host), back off on HTTP 429/5xx, and **never retry 401/403**;
+- send an identifiable User-Agent with the repository URL;
+- fetch public pages only, without logins, CAPTCHA solving or browser impersonation;
+- record its terms-review date, which `GET /sources` exposes.
+
+Offers from excluded boards enter only through **manual intake**: the candidate forwards an
+offer to the bot (M4).
 
 ## 3. Third-party content
 

@@ -18,8 +18,9 @@ fi
 rm -f "$log"
 
 docker compose exec -T postgres psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -P pager=off -c "
-  SELECT (r.started_at AT TIME ZONE 'America/Santiago')::timestamp(0) AS started_santiago, r.status,
-         extract(epoch FROM r.finished_at - r.started_at)::int AS seconds,
-         s.fetched, s.new, s.updated, s.errors
-    FROM jobs.runs r LEFT JOIN jobs.run_sources s USING (run_id)
-   ORDER BY r.started_at DESC LIMIT 1;"
+  WITH last AS (SELECT * FROM jobs.runs ORDER BY started_at DESC LIMIT 1)
+  SELECT (l.started_at AT TIME ZONE 'America/Santiago')::timestamp(0) AS started_santiago, l.status,
+         extract(epoch FROM l.finished_at - l.started_at)::int AS seconds,
+         s.source, s.fetched, s.new, s.updated, s.errors
+    FROM last l LEFT JOIN jobs.run_sources s USING (run_id)
+   ORDER BY s.source;"
