@@ -75,6 +75,9 @@ jobs:
       - name: Build and start stack, wait for health checks
         run: docker compose up -d --build --wait --wait-timeout 300
 
+      - name: Create n8n credentials referenced by the workflows
+        run: scripts/bootstrap_credentials.sh
+
       - name: Smoke test
         run: scripts/smoke_test.sh
 
