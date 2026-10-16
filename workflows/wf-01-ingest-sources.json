@@ -1,0 +1,436 @@
+{
+  "id": "wf01IngestGoB001",
+  "name": "WF-01 ingest-sources",
+  "description": null,
+  "nodes": [
+    {
+      "id": "wf01-every-weekday-08:00",
+      "name": "Every weekday 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "wf01-manual-run",
+      "name": "Manual run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "wf01-config",
+      "name": "Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Search configuration, versioned with this workflow (mirrors the As-Is config.json).\nconst config = {\n  daysBack: 21,\n  pages: 2,\n  perPage: 50,\n  categories: ['hardware-electronics', 'machine-learning-ai'],\n  queries: [\n    'ingeniero electronico', 'ingeniero civil electronico', 'ingeniero electrico',\n    'ingeniero automatizacion', 'ingeniero control', 'instrumentacion', 'telecomunicaciones',\n    'sistemas embebidos', 'hardware', 'plc scada', 'iot', 'ai engineer',\n    'inteligencia artificial', 'machine learning', 'vision artificial',\n  ],\n};\n// 'production' = fired by the active schedule; anything else is a manual/CLI/test run.\nconst trigger = $execution.mode === 'production' ? 'schedule' : 'manual';\nreturn [{ json: { trigger, config } }];\n"
+      }
+    },
+    {
+      "id": "wf01-start-run",
+      "name": "Start run",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Self-healing: a run still 'running' after 2 hours crashed before \"Finish run\".\nUPDATE jobs.runs SET status = 'failed', finished_at = now()\n WHERE status = 'running' AND started_at < now() - interval '2 hours';\nINSERT INTO jobs.runs (trigger) VALUES ($1) RETURNING run_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.trigger] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "jobsPostgres0001",
+          "name": "jobs-postgres (local)"
+        }
+      }
+    },
+    {
+      "id": "wf01-usd-rate",
+      "name": "USD rate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "url": "https://mindicador.cl/api/dolar",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "wf01-usd-rate-(fallback)",
+      "name": "USD rate (fallback)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "url": "https://open.er-api.com/v6/latest/USD",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "onError": "continueRegularOutput",
+      "alwaysOutputData": true
+    },
+    {
+      "id": "wf01-build-requests",
+      "name": "Build requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// One GET per (category or query) x page. Get on Board public API v0 (ADR-0003).\nconst { config } = $('Config').first().json;\nconst base = 'https://www.getonbrd.com/api/v0';\nconst expand = encodeURIComponent(JSON.stringify(['company', 'seniority', 'location_cities', 'modality']));\nconst targets = [\n  ...config.categories.map((c) => ({ label: `category:${c}`, path: `/categories/${c}/jobs?` })),\n  ...config.queries.map((q) => ({ label: `query:${q}`, path: `/search/jobs?query=${encodeURIComponent(q)}&` })),\n];\nconst out = [];\nfor (const t of targets) {\n  for (let page = 1; page <= config.pages; page++) {\n    out.push({ json: { label: t.label, page, url: `${base}${t.path}per_page=${config.perPage}&page=${page}&expand=${expand}` } });\n  }\n}\nreturn out;\n"
+      }
+    },
+    {
+      "id": "wf01-get-on-board-api",
+      "name": "Get on Board API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1320,
+        0
+      ],
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "n8n-job-matching-agent/0.1 (+https://github.com/iramosv2000/n8n-job-matching-agent)"
+            }
+          ]
+        },
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 800
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "wf01-collect",
+      "name": "Collect",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Flatten API pages, keep recent jobs, de-duplicate ids within the run, count errors.\nconst { config } = $('Config').first().json;\nconst cutoff = Date.now() / 1000 - config.daysBack * 86400;\nconst seen = new Set();\nconst items = [];\nlet fetched = 0, errors = 0, errorSample = null;\nfor (const response of $input.all()) {\n  if (response.json.error) {\n    errors++;\n    errorSample ??= String(response.json.error.message ?? JSON.stringify(response.json.error)).slice(0, 300);\n    continue;\n  }\n  for (const job of response.json.data ?? []) {\n    fetched++;\n    if ((job.attributes?.published_at ?? 0) < cutoff || seen.has(job.id)) continue;\n    seen.add(job.id);\n    items.push(job);\n  }\n}\n// USD->CLP: mindicador.cl (Banco Central series), else open.er-api.com, else null (salary kept as USD note).\nconst usd = $('USD rate').first().json?.serie?.[0]?.valor\n  ?? $('USD rate (fallback)').first().json?.rates?.CLP\n  ?? null;\nreturn [{ json: { source: 'getonbrd', items, usd_clp: usd, fetched, errors, error_sample: errorSample } }];\n"
+      }
+    },
+    {
+      "id": "wf01-normalize",
+      "name": "Normalize",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://matcher:8000/normalize",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ source: $json.source, items: $json.items, usd_clp: $json.usd_clp }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "wf01-recent-offers",
+      "name": "Recent offers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT coalesce(jsonb_agg(jsonb_build_object(\n           'offer_id', offer_id, 'title', title, 'company', company,\n           'region', region, 'first_seen', first_seen) ORDER BY first_seen), '[]'::jsonb) AS existing\n  FROM jobs.offers\n WHERE first_seen > now() - interval '60 days' AND duplicate_of IS NULL;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "jobsPostgres0001",
+          "name": "jobs-postgres (local)"
+        }
+      }
+    },
+    {
+      "id": "wf01-dedupe",
+      "name": "Dedupe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://matcher:8000/dedupe",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ candidates: $('Normalize').first().json.offers.map(o => ({ offer_id: o.offer_id, title: o.title, company: o.company, region: o.region })), existing: $json.existing }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      }
+    },
+    {
+      "id": "wf01-upsert-offers",
+      "name": "Upsert offers",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2420,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH input AS (\n    SELECT x.*, d.duplicate_of\n      FROM jsonb_to_recordset($1::jsonb) AS x(\n               offer_id text, source text, url text, title text, company text, location_raw text,\n               region text, published_at date, description text, structured jsonb, raw jsonb,\n               content_hash text)\n      LEFT JOIN jsonb_to_recordset($2::jsonb) AS d(offer_id text, duplicate_of text) USING (offer_id)\n), previous AS (\n    SELECT o.offer_id, o.content_hash FROM jobs.offers o JOIN input i USING (offer_id)\n), upsert AS (\n    INSERT INTO jobs.offers AS o (offer_id, source, url, title, company, location_raw, region, published_at,\n                                  description, structured, raw, content_hash, first_run_id, duplicate_of)\n    SELECT offer_id, source, url, title, company, location_raw, region, published_at,\n           description, structured, raw, content_hash, $3::uuid, duplicate_of\n      FROM input\n    ON CONFLICT (offer_id) DO UPDATE SET\n        url = EXCLUDED.url, title = EXCLUDED.title, company = EXCLUDED.company,\n        location_raw = EXCLUDED.location_raw, region = EXCLUDED.region,\n        published_at = EXCLUDED.published_at, description = EXCLUDED.description,\n        structured = EXCLUDED.structured, raw = EXCLUDED.raw, content_hash = EXCLUDED.content_hash,\n        last_seen = now(), duplicate_of = coalesce(o.duplicate_of, EXCLUDED.duplicate_of)\n    RETURNING 1\n)\nSELECT (SELECT count(*) FROM upsert)::int AS upserted,\n       (SELECT count(*) FROM input WHERE offer_id NOT IN (SELECT offer_id FROM previous))::int AS new,\n       (SELECT count(*) FROM input i JOIN previous p USING (offer_id)\n         WHERE p.content_hash <> i.content_hash)::int AS updated;",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($('Normalize').first().json.offers), JSON.stringify($json.links), $('Start run').first().json.run_id ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "jobsPostgres0001",
+          "name": "jobs-postgres (local)"
+        }
+      }
+    },
+    {
+      "id": "wf01-finish-run",
+      "name": "Finish run",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH s AS (\n    INSERT INTO jobs.run_sources (run_id, source, fetched, new, updated, errors, error_sample)\n    VALUES ($1::uuid, 'getonbrd', $2::int, $3::int, $4::int, $5::int, nullif($6, ''))\n    RETURNING fetched, errors\n)\nUPDATE jobs.runs\n   SET finished_at = now(),\n       status = CASE WHEN (SELECT errors FROM s) = 0 THEN 'succeeded'\n                     WHEN (SELECT fetched FROM s) > 0 THEN 'partial'\n                     ELSE 'failed' END\n WHERE run_id = $1::uuid\nRETURNING run_id, status, extract(epoch FROM finished_at - started_at)::int AS seconds;",
+        "options": {
+          "queryReplacement": "={{ [ $('Start run').first().json.run_id, $('Collect').first().json.fetched, $json.new, $json.updated, $('Collect').first().json.errors + $('Normalize').first().json.rejected.length, $('Collect').first().json.error_sample ?? '' ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "jobsPostgres0001",
+          "name": "jobs-postgres (local)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "Start run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start run": {
+      "main": [
+        [
+          {
+            "node": "USD rate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "USD rate": {
+      "main": [
+        [
+          {
+            "node": "USD rate (fallback)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "USD rate (fallback)": {
+      "main": [
+        [
+          {
+            "node": "Build requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build requests": {
+      "main": [
+        [
+          {
+            "node": "Get on Board API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get on Board API": {
+      "main": [
+        [
+          {
+            "node": "Collect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect": {
+      "main": [
+        [
+          {
+            "node": "Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize": {
+      "main": [
+        [
+          {
+            "node": "Recent offers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recent offers": {
+      "main": [
+        [
+          {
+            "node": "Dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dedupe": {
+      "main": [
+        [
+          {
+            "node": "Upsert offers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert offers": {
+      "main": [
+        [
+          {
+            "node": "Finish run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every weekday 08:00": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual run": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Santiago",
+    "saveManualExecutions": true
+  },
+  "meta": null,
+  "nodeGroups": [],
+  "sourceWorkflowId": null,
+  "tags": [],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

@@ -101,7 +101,9 @@ Engine on Linux). Details, secrets handling and troubleshooting:
 ```bash
 scripts/init_env.sh            # .env with random secrets (git-ignored); back up N8N_ENCRYPTION_KEY
 docker compose up -d --wait    # PostgreSQL + n8n, health-checked
-scripts/smoke_test.sh          # readiness, schemas, workflow import, export checks
+scripts/bootstrap_credentials.sh   # n8n credentials referenced by the workflows (from .env)
+scripts/smoke_test.sh          # readiness, migrations, matcher, workflow import, export checks
+scripts/run_ingestion.sh       # run WF-01 once: Get on Board -> PostgreSQL, prints a summary
 pre-commit install             # local quality, secret and personal-data hooks
 ```
 
