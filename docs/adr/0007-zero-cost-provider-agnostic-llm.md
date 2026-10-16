@@ -1,6 +1,6 @@
 # ADR-0007: Zero-cost, provider-agnostic LLM layer
 
-- **Status:** Accepted. Supersedes [ADR-0004](0004-llm-provider-and-model-selection.md)
+- **Status:** Accepted, verified in M1-06/M1-07 (2026-10-15). Supersedes [ADR-0004](0004-llm-provider-and-model-selection.md)
 - **Date:** 2026-10-14
 
 ## Context
@@ -75,3 +75,17 @@ Two constraints from primary sources shape the design:
   without code changes.
 - The ~2,000-token offer prompts and ~8,000-token CV prompts must fit the local model's
   context window; this is verified in M1-07.
+
+## Verification (M1-06, M1-07; 2026-10-15)
+
+Evidence: [`spikes/M1-06-n8n-capabilities.md`](../spikes/M1-06-n8n-capabilities.md) and
+[`spikes/M1-07-local-llm-benchmark.md`](../spikes/M1-07-local-llm-benchmark.md).
+
+| Item | Result |
+|---|---|
+| Local model | **`qwen3.5:9b`** is primary (Apache 2.0; 8.5 GB resident; 6.3 s per extraction; 51 s per CV; 0 fabrications). `granite4.2:8b` is the light fallback (6.6 GB resident). `gemma4:12b` is rejected (runaway generation on the CV task) |
+| Context fit | Verified up to ~10k tokens with explicit `num_ctx` |
+| Integration path | n8n's built-in Gemini and Ollama nodes offer JSON *mode* only, with no schema. WF-10 therefore calls the **native APIs through the HTTP Request node** (Ollama `format` schema; Gemini response schema, to verify in M3-04) and validates every response in matcher-service |
+| Required router settings | Per-task output cap (`num_predict`), request timeout, and `done_reason: "length"` treated as failure → fallback |
+| Runtime | The **official Ollama build** is required. The Homebrew formula lacks `xgrammar`, so MLX-engine models return HTTP 501 to schema requests |
+| Networking | n8n → `host.docker.internal:11434` works on Colima with Ollama bound to `127.0.0.1` |
