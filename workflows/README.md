@@ -10,12 +10,12 @@ Exported n8n workflows, one pretty-printed JSON file per workflow, produced by
 | File | Workflow | Trigger | Status |
 |---|---|---|---|
 | `wf-00-smoke-test.json` | Minimal workflow that CI imports to prove the round trip | Manual | ✔ |
-| `wf-01-ingest-sources.json` | **WF-01 ingest-sources**: Get on Board (API) + enabled optional sources (matcher) → `/normalize` → `/dedupe` → upsert `jobs.offers` → per-source run counts | Weekdays 08:00 (America/Santiago) + manual | ✔ M2 |
+| `wf-01-ingest-sources.json` | **WF-01 ingest-sources**: Get on Board (API) + enabled optional sources (matcher) → `/normalize` → `/dedupe` → upsert `jobs.offers` → per-source run counts | Hourly 08:00–20:00 on weekdays with a catch-up gate (America/Santiago) + manual | ✔ M2 |
 
 ### WF-01 in brief
 
 ```
-Config ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build requests ─▶ Get on Board API
+Config ─▶ Gate ─▶ Should run? ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build requests ─▶ Get on Board API
    ─▶ Collect Get on Board ─▶ Known ids ─▶ Optional sources (matcher /sources/fetch-enabled)
    ─▶ Batches (one per source) ─▶ Normalize ─▶ Combine ─▶ Recent offers ─▶ Dedupe ─▶ Upsert ─▶ Finish run
 ```
@@ -33,8 +33,24 @@ sources enabled, and needs no Merge node waiting on a branch that may produce no
   changes (`content_hash`).
 - **Self-healing:** a run left in `running` for more than 2 h is marked `failed` by the
   next run.
-- **CLI runs** (`scripts/run_ingestion.sh`) are recorded with trigger `schedule`, because
-  n8n reports CLI executions as production executions.
+- **Catch-up schedule.** The laptop may be asleep at 08:00, and n8n does not replay missed
+  schedule ticks. The trigger therefore fires **every hour from 08:00 to 20:00 on weekdays**,
+  and `Gate` + `Should run?` let a scheduled tick work only if:
+  - no run has succeeded today;
+  - no run is in progress;
+  - fewer than 3 runs failed today. A failing day is retried hourly at most three times.
+
+  Skipped ticks end in milliseconds; they appear in n8n's *Executions* list but write nothing
+  to `jobs.runs`.
+- **Run origin.** `Gate` reads the execution mode from n8n's `execution_entity` table
+  (`trigger`, `cli` or `manual`; verified on 2.42.7). Runs are recorded as `schedule`
+  (`trigger`) or `manual` (CLI and editor). Manual runs always proceed. An unknown mode is
+  treated as scheduled, so a change in n8n internals cannot multiply the daily runs.
+- **Verified on 2026-10-16:**
+  - a CLI run proceeded on a day that already had runs, and was recorded as `manual`;
+  - minute-by-minute scheduled ticks were skipped in 27–62 ms with no new rows;
+  - a scheduled tick on a day without a successful run performed the full ingestion
+    (126 s) and was recorded as `schedule`.
 
 **Importing:** `import_workflows.sh` re-publishes workflows that were active before the
 import, because n8n deactivates them on import, and `check_workflows.py` rejects two files
