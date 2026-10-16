@@ -89,3 +89,4 @@ Evidence: [`spikes/M1-06-n8n-capabilities.md`](../spikes/M1-06-n8n-capabilities.
 | Required router settings | Per-task output cap (`num_predict`), request timeout, and `done_reason: "length"` treated as failure → fallback |
 | Runtime | The **official Ollama build** is required. The Homebrew formula lacks `xgrammar`, so MLX-engine models return HTTP 501 to schema requests |
 | Networking | n8n → `host.docker.internal:11434` works on Colima with Ollama bound to `127.0.0.1` |
+| Per-source restriction (ADR-0008) | Offers from sources with `external_llm_allowed: false` (Chiletrabajos) are routed to the **local model only**, for extraction too |
