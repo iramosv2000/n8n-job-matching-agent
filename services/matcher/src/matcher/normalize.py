@@ -2,9 +2,9 @@
 instead of failing the whole batch (one malformed item must not stop a run)."""
 
 from matcher.models import NormalizeRequest, NormalizeResponse, Rejected
-from matcher.sources import getonbrd
+from matcher.sources import chiletrabajos, getonbrd
 
-ADAPTERS = {"getonbrd": getonbrd.to_canonical}
+ADAPTERS = {"getonbrd": getonbrd.to_canonical, "chiletrabajos": chiletrabajos.to_canonical}
 
 
 def normalize_batch(request: NormalizeRequest) -> NormalizeResponse:

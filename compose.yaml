@@ -53,6 +53,9 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+    environment:
+      # Optional sources fetched by matcher (ADR-0008). Empty = only Get on Board (via n8n).
+      MATCHER_ENABLED_SOURCES: ${MATCHER_ENABLED_SOURCES:-}
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
