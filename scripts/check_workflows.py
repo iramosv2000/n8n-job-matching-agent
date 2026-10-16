@@ -62,6 +62,22 @@ def iter_files(args: list[str]):
             yield path
 
 
+def duplicate_ids(files: list[Path]) -> list[str]:
+    """Two files with the same workflow id would overwrite each other on import."""
+    seen: dict[str, Path] = {}
+    errors = []
+    for path in files:
+        try:
+            workflow_id = json.loads(path.read_text(encoding="utf-8")).get("id")
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if workflow_id and workflow_id in seen:
+            errors.append(f"{path}: workflow id {workflow_id!r} also used by {seen[workflow_id]}")
+        elif workflow_id:
+            seen[workflow_id] = path
+    return errors
+
+
 def main(args: list[str]) -> int:
     failed = 0
     files = list(iter_files(args))
@@ -69,6 +85,9 @@ def main(args: list[str]) -> int:
         for error in check_workflow(path):
             print(f"{path}: {error}")
             failed += 1
+    for error in duplicate_ids(files):
+        print(error)
+        failed += 1
     if failed:
         print(f"{failed} problem(s) found in workflow exports")
         return 1

@@ -82,6 +82,14 @@ class CheckWorkflowsTest(unittest.TestCase):
                 self.assertTrue(any(expected in e for e in self.check(workflow)), self.check(workflow))
 
 
+class DuplicateIdsTest(unittest.TestCase):
+    def test_same_id_in_two_files_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            for name in ("a.json", "b.json"):
+                Path(tmp, name).write_text(json.dumps({**BASE, "id": "wf01"}))
+            self.assertEqual(check_workflows.main([tmp]), 1)
+
+
 class GuardPersonalDataTest(unittest.TestCase):
     def check_text(self, text: str, denylist=()) -> list[str]:
         with tempfile.TemporaryDirectory() as tmp:
