@@ -32,7 +32,7 @@ that forbid it or need authentication (LinkedIn, Indeed, Laborum), and multi-ten
 
 | ID | Name | Trigger | Summary | Milestone |
 |---|---|---|---|---|
-| WF-01 | `ingest-sources` | Schedule (hourly 08:00–20:00 on weekdays, America/Santiago) with a once-per-day catch-up gate | Fetch each source → call `/normalize` → upsert `offers` → record `runs` | M2 |
+| WF-01 | `ingest-sources` | Schedule every 15 min with a gate: once per weekday, 08:00–20:59 America/Santiago (survives host sleep) | Fetch each source → call `/normalize` → upsert `offers` → record `runs` | M2 |
 | WF-02 | `enrich-and-score` | Called by WF-01 | For new or changed offers: `/extract/rules` → LLM extraction via WF-10 (only for offers that pass the rule pre-filter) → `/score` → persist `offer_features` | M3 |
 | WF-03 | `daily-digest` | Called by WF-02 | Top-N new offers above threshold → Telegram message with inline buttons | M4 |
 | WF-04 | `telegram-actions` | Telegram Trigger (callback queries) | `generate_cv` → WF-05; `discard` / `applied` / `interview` → update `applications` | M4 |

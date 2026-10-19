@@ -4,8 +4,8 @@
   "description": null,
   "nodes": [
     {
-      "id": "wf01-weekdays-hourly-08-20",
-      "name": "Weekdays hourly 08-20",
+      "id": "wf01-every-15-min-(gated)",
+      "name": "Every 15 min (gated)",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
       "position": [
@@ -17,7 +17,7 @@
           "interval": [
             {
               "field": "cronExpression",
-              "expression": "0 8-20 * * 1-5"
+              "expression": "*/15 * * * *"
             }
           ]
         }
@@ -58,7 +58,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- Catch-up schedule (docs: workflows/README.md). The trigger fires hourly 08:00-20:00 on weekdays;\n-- only the first successful run of the day does any work. The execution mode ('trigger' for the\n-- schedule, 'cli', 'manual') is read from n8n's own table (verified on n8n 2.42.7).\nSELECT coalesce((SELECT mode FROM n8n.execution_entity WHERE id = $1::int), 'unknown') AS mode,\n       count(*) FILTER (WHERE status IN ('succeeded', 'partial')) > 0 AS ran_today,\n       count(*) FILTER (WHERE status = 'running' AND started_at > now() - interval '2 hours') > 0 AS running,\n       count(*) FILTER (WHERE status = 'failed')::int AS failed_today\n  FROM jobs.runs\n WHERE (started_at AT TIME ZONE 'America/Santiago')::date = (now() AT TIME ZONE 'America/Santiago')::date;",
+        "query": "-- Catch-up schedule (docs: workflows/README.md). The trigger ticks every 15 minutes, every day: short\n-- timers survive host sleep (a suspended VM also suspends n8n's timers, so a long wait to the next\n-- weekday 08:00 can slip by hours or days). Scheduled work happens only on weekdays 08:00-20:59,\n-- once per day. The execution mode ('trigger', 'cli', 'manual') is read from n8n's own table\n-- (verified on n8n 2.42.7).\nSELECT coalesce((SELECT mode FROM n8n.execution_entity WHERE id = $1::int), 'unknown') AS mode,\n       (extract(isodow FROM now() AT TIME ZONE 'America/Santiago') BETWEEN 1 AND 5\n        AND extract(hour FROM now() AT TIME ZONE 'America/Santiago') BETWEEN 8 AND 20) AS in_window,\n       count(*) FILTER (WHERE status IN ('succeeded', 'partial')) > 0 AS ran_today,\n       count(*) FILTER (WHERE status = 'running' AND started_at > now() - interval '2 hours') > 0 AS running,\n       count(*) FILTER (WHERE status = 'failed')::int AS failed_today\n  FROM jobs.runs\n WHERE (started_at AT TIME ZONE 'America/Santiago')::date = (now() AT TIME ZONE 'America/Santiago')::date;",
         "options": {
           "queryReplacement": "={{ [$execution.id] }}"
         }
@@ -80,7 +80,7 @@
         0
       ],
       "parameters": {
-        "jsCode": "// Scheduled ticks run only if today's ingestion has not succeeded yet, none is in progress and fewer\n// than 3 attempts failed today. CLI and editor runs always proceed. An unknown mode is treated as\n// scheduled, so a change in n8n internals can never turn the hourly ticks into hourly ingestions.\nconst { mode, ran_today, running, failed_today } = $('Gate').first().json;\nconst scheduled = mode !== 'cli' && mode !== 'manual';\nif (scheduled && (ran_today || running || failed_today >= 3)) {\n  return [];  // nothing to do this hour; the workflow ends here\n}\nreturn [{ json: { trigger: scheduled ? 'schedule' : 'manual', mode } }];\n"
+        "jsCode": "// Scheduled ticks run only inside the window (weekdays 08:00-20:59, Santiago), if today's ingestion\n// has not succeeded yet, none is in progress and fewer than 3 attempts failed today. CLI and editor\n// runs always proceed. An unknown mode is treated as scheduled, so a change in n8n internals can\n// never turn the 15-minute ticks into repeated ingestions.\nconst { mode, in_window, ran_today, running, failed_today } = $('Gate').first().json;\nconst scheduled = mode !== 'cli' && mode !== 'manual';\nif (scheduled && (!in_window || ran_today || running || failed_today >= 3)) {\n  return [];  // nothing to do this hour; the workflow ends here\n}\nreturn [{ json: { trigger: scheduled ? 'schedule' : 'manual', mode } }];\n"
       }
     },
     {
@@ -568,7 +568,7 @@
         ]
       ]
     },
-    "Weekdays hourly 08-20": {
+    "Every 15 min (gated)": {
       "main": [
         [
           {
