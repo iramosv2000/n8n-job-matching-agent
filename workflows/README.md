@@ -10,12 +10,12 @@ Exported n8n workflows, one pretty-printed JSON file per workflow, produced by
 | File | Workflow | Trigger | Status |
 |---|---|---|---|
 | `wf-00-smoke-test.json` | Minimal workflow that CI imports to prove the round trip | Manual | ✔ |
-| `wf-01-ingest-sources.json` | **WF-01 ingest-sources**: Get on Board (API) + enabled optional sources (matcher) → `/normalize` → `/dedupe` → upsert `jobs.offers` → per-source run counts | Weekdays 08:00 (America/Santiago) + manual | ✔ M2 |
+| `wf-01-ingest-sources.json` | **WF-01 ingest-sources**: Get on Board (API) + enabled optional sources (matcher) → `/normalize` → `/dedupe` → upsert `jobs.offers` → per-source run counts | Every 15 min, gated to once per weekday between 08:00 and 20:59 (America/Santiago) + manual | ✔ M2 |
 
 ### WF-01 in brief
 
 ```
-Config ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build requests ─▶ Get on Board API
+Config ─▶ Gate ─▶ Should run? ─▶ Start run ─▶ USD rate ─▶ USD rate (fallback) ─▶ Build requests ─▶ Get on Board API
    ─▶ Collect Get on Board ─▶ Known ids ─▶ Optional sources (matcher /sources/fetch-enabled)
    ─▶ Batches (one per source) ─▶ Normalize ─▶ Combine ─▶ Recent offers ─▶ Dedupe ─▶ Upsert ─▶ Finish run
 ```
@@ -33,8 +33,30 @@ sources enabled, and needs no Merge node waiting on a branch that may produce no
   changes (`content_hash`).
 - **Self-healing:** a run left in `running` for more than 2 h is marked `failed` by the
   next run.
-- **CLI runs** (`scripts/run_ingestion.sh`) are recorded with trigger `schedule`, because
-  n8n reports CLI executions as production executions.
+- **Catch-up schedule that survives host sleep.** On macOS the Docker VM is suspended while
+  the laptop sleeps, and **n8n's schedule timers are suspended with it**: a timer waiting for
+  "next weekday 08:00" slips by the whole time the host slept. Observed on 2026-10-16/19:
+  - Friday's hourly ticks fired late (14:50, 20:39);
+  - the Monday 08:00 tick had not fired by 08:18, after a weekend asleep.
+
+  The trigger therefore ticks **every 15 minutes, every day**. A short timer re-anchors to
+  the wall clock at every tick, so after a wake-up the next tick comes within about 15
+  minutes. `Gate` + `Should run?` let a scheduled tick work only if:
+  - it is a weekday between 08:00 and 20:59 (Santiago time);
+  - no run has succeeded today, and none is in progress;
+  - fewer than 3 runs failed today. A failing day is retried at most three times.
+
+  Skipped ticks end in milliseconds. They appear in n8n's *Executions* list (pruned after
+  14 days by default) but write nothing to `jobs.runs`.
+- **Run origin.** `Gate` reads the execution mode from n8n's `execution_entity` table
+  (`trigger`, `cli` or `manual`; verified on 2.42.7). Runs are recorded as `schedule`
+  (`trigger`) or `manual` (CLI and editor). Manual runs always proceed. An unknown mode is
+  treated as scheduled, so a change in n8n internals cannot multiply the daily runs.
+- **Verified on 2026-10-16:**
+  - a CLI run proceeded on a day that already had runs, and was recorded as `manual`;
+  - minute-by-minute scheduled ticks were skipped in 27–62 ms with no new rows;
+  - a scheduled tick on a day without a successful run performed the full ingestion
+    (126 s) and was recorded as `schedule`.
 
 **Importing:** `import_workflows.sh` re-publishes workflows that were active before the
 import, because n8n deactivates them on import, and `check_workflows.py` rejects two files

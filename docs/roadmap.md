@@ -49,6 +49,7 @@ the acceptance criterion copied into each issue.
 | M2-03 | WF-01 Get on Board ingestion | Scheduled workflow pages through queries and categories, upserts offers and records per-source counts | type:feature, area:n8n |
 | M2-04 | Cross-source deduplication | `/dedupe` ported from the As-Is with tests; duplicates linked through `duplicate_of` | type:feature, area:service |
 | M2-05 | Optional source adapters | Terms reviewed per source (ADR-0008); Chiletrabajos adapter behind `MATCHER_ENABLED_SOURCES` with `robots.txt` checks, rate limiting and synthetic-fixture tests; excluded sources documented | type:feature, area:service |
+| M2-07 | WF-01 catch-up schedule | WF-01 still runs once per weekday when the laptop sleeps through 08:00: 15-minute ticks (short timers survive VM suspension) are gated to weekdays 08:00–20:59 and skip when today's ingestion already succeeded, one is in progress, or 3 attempts failed; manual/CLI runs always proceed and are recorded as `manual` | type:feature, area:n8n |
 | M2-06 | Measure the arrival rate | Two weeks of runs summarised (new offers/day, per source); fit against the Gemini free-tier quota (as shown in AI Studio, with date) recorded in ADR-0007 | type:spike, area:llm |
 
 ## M3 Enrichment & scoring
