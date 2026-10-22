@@ -130,3 +130,35 @@ def test_remote_without_location_and_listing_fallbacks():
 def test_missing_fields_raise():
     with pytest.raises(ValueError, match="missing"):
         to_canonical(item(id=None), None)
+
+
+def test_fetch_reports_cap_backlog_and_truncation():
+    full_page = (
+        "<html><body>"
+        + "".join(
+            f'<div class="job-item"><h2><a href="https://www.chiletrabajos.cl/trabajo/o-{n}">O {n}</a></h2>'
+            f'<h3 class="meta">Empresa, Calama</h3><h3 class="meta">16 de octubre de 2026</h3></div>'
+            for n in range(1000, 1030)
+        )
+        + "</body></html>"
+    )
+
+    def handler(request):
+        url = str(request.url)
+        if url.endswith("/robots.txt"):
+            return httpx2.Response(404)
+        if "/encuentra-un-empleo" in url:
+            return httpx2.Response(200, text=full_page)  # every page full and in-window
+        return httpx2.Response(200, text=detail(1, "x"))
+
+    request = SourceFetchRequest(queries=["a", "b"], pages=1, max_details=5, days=7)
+    result = fetch(polite(httpx2.MockTransport(handler)), request, TODAY)
+    assert (result.candidates, result.downloaded, result.pending) == (30, 5, 25)
+    assert (result.detail_cap, result.truncated_queries) == (5, 2)
+
+
+def test_no_truncation_when_last_page_is_short_or_old():
+    mock, _ = transport()
+    result = fetch(polite(mock), SourceFetchRequest(queries=["x"], pages=1, days=7), TODAY)
+    assert result.truncated_queries == 0  # 4 entries < page size
+    assert result.pending == 0

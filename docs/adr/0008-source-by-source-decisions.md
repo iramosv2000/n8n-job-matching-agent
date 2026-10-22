@@ -52,3 +52,29 @@ access is not forbidden. The review was carried out on 2026-10-16:
   enabling a source on a new installation or after six months.
 - The As-Is tool, which is personal and not published, still contains adapters for the
   excluded boards. That code must not be published.
+
+## Amendment (2026-10-22): detail cap raised from 60 to 150
+
+**What was wrong.** The cap of 60 detail pages per run was a judgement call. It rested on an
+estimated arrival of ~18 offers/day, obtained by dividing the 371 recent listing candidates by
+the 21-day window. That estimate assumed the listings span 21 days. They do not: with 2 pages
+per query, the busiest queries cover only the last 3–5 days.
+
+**Evidence.** Reconstructed from n8n's execution history, the backlog after each run was
+310 → 251 → 191 → 158 → 104 → 105 → 105 → 101. It stopped draining from 19 October, because
+weekday arrivals in the queried listings were **≥ 53–76 per day** (by publication date, a lower
+bound because of the cap). Offers left in the backlog aged out of the listings and were never
+downloaded, so the cap was **losing data, not just delaying it**, and it censored the per-run
+"new" counts used for M2-06.
+
+**Decision.** The cap is now 150, more than twice the observed weekday arrival. At 0.8 s per
+request a run takes ~2.5 minutes and about 180 requests, once a day. The first run at 150
+downloaded the 109 pending offers and left `pending = 0`. Each run now records `listed`,
+`candidates`, `skipped_known`, `downloaded`, `pending`, `detail_cap` and `truncated_queries`
+in `jobs.run_sources`, and the arrival rate is measured by publication date from the day the
+backlog first reached 0 (`scripts/ingestion_report.sh`).
+
+**Remaining limitation.** In 5 of 15 queries the 2-page limit cuts off offers still inside
+the 21-day window (`truncated_queries = 5`). With daily runs this affects the backfill of
+older offers, not the capture of new ones: a new offer appears at the top of the listing on
+its first day. That holds while no single query receives more than 60 offers a day.

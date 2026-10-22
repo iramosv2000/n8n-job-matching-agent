@@ -26,7 +26,9 @@ sources enabled, and needs no Merge node waiting on a branch that may produce no
 - **Search configuration** (categories, queries, pages, 21-day window) lives in the `Config`
   node, so changes to it are versioned with the workflow.
 - **Politeness:** one request every 0.8 s, identifiable User-Agent, 3 retries. Errors are
-  counted per run instead of aborting it.
+  counted per run instead of aborting it. Chiletrabajos detail downloads are capped at
+  **150 per run** (ADR-0008 amendment), and each run records its backlog and truncation in
+  `jobs.run_sources`.
 - **USD → CLP:** mindicador.cl, then open.er-api.com. If both fail, salaries are kept as
   a USD note, never converted with a stale constant.
 - **Idempotent:** a re-run on the same day inserts 0 new offers. `updated` counts content

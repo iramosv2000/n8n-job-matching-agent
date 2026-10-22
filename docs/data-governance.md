@@ -29,6 +29,8 @@ Every enabled adapter must:
 - check `robots.txt` before **every** request, and treat an unreadable or refused robots
   file as "nothing allowed";
 - space requests (≥ 0.8 s per host), back off on HTTP 429/5xx, and **never retry 401/403**;
+- cap detail downloads per run (Chiletrabajos: 150, set above the observed daily arrival so
+  nothing ages out unseen; ADR-0008 amendment), and record the backlog left by the cap;
 - send an identifiable User-Agent with the repository URL;
 - fetch public pages only, without logins, CAPTCHA solving or browser impersonation;
 - record its terms-review date, which `GET /sources` exposes.

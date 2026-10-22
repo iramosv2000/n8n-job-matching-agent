@@ -119,6 +119,12 @@ class SourceFetchResponse(BaseModel):
     listed: int = Field(description="Listing entries seen")
     candidates: int = Field(description="Distinct recent offers in the listings")
     skipped_known: int
+    downloaded: int = Field(default=0, description="Detail pages downloaded successfully")
+    pending: int = Field(default=0, description="New candidates left for later runs because of max_details")
+    detail_cap: int = Field(default=0, description="max_details applied in this run")
+    truncated_queries: int = Field(
+        default=0, description="Queries whose page limit cut off offers that are still inside the day window"
+    )
     errors: int
     error_sample: str | None = None
     robots_checked_at: dict[str, str]

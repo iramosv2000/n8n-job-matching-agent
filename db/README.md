@@ -19,3 +19,4 @@ docker compose run --rm migrate --migrations-dir /db/migrations --no-dump-schema
 | Migration | Content |
 |---|---|
 | `20261016000001_jobs_schema_v1` | `runs`, `run_sources`, `offers`; retention function `jobs.purge_offer_texts(days)` |
+| `20261022000001_run_sources_fetch_stats` | Fetch statistics per run and source (backlog, cap, truncation) for M2-06 |
