@@ -27,6 +27,13 @@ erDiagram
         int updated
         int errors
         text error_sample
+        int listed
+        int candidates
+        int skipped_known
+        int downloaded
+        int pending
+        int detail_cap
+        int truncated_queries
     }
     offers {
         text offer_id PK
@@ -100,6 +107,7 @@ erDiagram
 
 | Table | Notes |
 |---|---|
+| `run_sources` fetch statistics | **Added in M2-06** (migration `20261022000001`) for capped sources: `listed`, `candidates`, `skipped_known`, `downloaded`, `pending` (backlog left by `detail_cap`) and `truncated_queries` (queries whose page limit cut off in-window offers). NULL for API sources and for runs that could not be reconstructed. |
 | `runs`, `run_sources` | **Implemented in M2-01.** `status` ∈ {`running`, `succeeded`, `partial`, `failed`}; `trigger` ∈ {`schedule`, `manual`, `test`}. One `run_sources` row per source and run, with fetched/new/updated/error counts. |
 | `offers` | **Implemented in M2-01.** `offer_id` = `{source}:{native_id}`. `description` is redacted plain text; `structured` holds source-reported fields; `raw` is the unredacted payload, cleared by `jobs.purge_offer_texts(180)`. `content_hash` detects edits to an existing offer. `duplicate_of` links cross-source duplicates rather than deleting them, so the deduplication decision stays auditable. |
 | `offer_features` | **Append-only.** One row per extractor run (`extractor` ∈ {`rules`, `llm`, `hybrid`}) and version, so extractors can be compared on the same offers (needed in M6). The current view picks the latest `hybrid` row. |

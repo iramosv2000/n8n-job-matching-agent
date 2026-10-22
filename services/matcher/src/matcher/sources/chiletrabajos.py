@@ -94,7 +94,7 @@ def fetch(client: PoliteClient, request: SourceFetchRequest, today: date) -> Sou
     cutoff = today - timedelta(days=request.days)
     known = set(request.known_ids)
     candidates: dict[str, dict[str, Any]] = {}
-    listed, errors, sample = 0, 0, None
+    listed, errors, sample, truncated = 0, 0, None, 0
     try:
         for query in request.queries:
             for page in range(request.pages):
@@ -112,6 +112,12 @@ def fetch(client: PoliteClient, request: SourceFetchRequest, today: date) -> Sou
                         candidates.setdefault(number, entry)
                 if len(entries) < PAGE_SIZE:
                     break
+            else:
+                # Page limit reached with a full last page: if its oldest entry is still inside the
+                # window, in-window offers may exist beyond the pages we read (coverage truncation).
+                dates = [e["date"] for e in entries if e["date"]]
+                if entries and (not dates or min(dates) >= cutoff.isoformat()):
+                    truncated += 1
 
         new = [(n, e) for n, e in candidates.items() if f"chiletrabajos:{n}" not in known]
         new.sort(key=lambda item: item[1]["date"] or "", reverse=True)  # newest first under the cap
@@ -126,8 +132,9 @@ def fetch(client: PoliteClient, request: SourceFetchRequest, today: date) -> Sou
     except DisallowedByRobots as exc:
         return SourceFetchResponse(
             source="chiletrabajos", items=[], listed=listed, candidates=len(candidates),
-            skipped_known=0, errors=errors + 1, error_sample=f"disallowed by robots.txt: {exc}",
-            robots_checked_at=client.robots_checked_at,
+            skipped_known=0, downloaded=0, pending=0, detail_cap=request.max_details,
+            truncated_queries=truncated, errors=errors + 1,
+            error_sample=f"disallowed by robots.txt: {exc}", robots_checked_at=client.robots_checked_at,
         )  # fmt: skip
     return SourceFetchResponse(
         source="chiletrabajos",
@@ -135,6 +142,10 @@ def fetch(client: PoliteClient, request: SourceFetchRequest, today: date) -> Sou
         listed=listed,
         candidates=len(candidates),
         skipped_known=len(candidates) - len(new),
+        downloaded=len(items),
+        pending=max(0, len(new) - request.max_details),
+        detail_cap=request.max_details,
+        truncated_queries=truncated,
         errors=errors,
         error_sample=sample,
         robots_checked_at=client.robots_checked_at,
